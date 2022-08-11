@@ -9,28 +9,42 @@
 
 # **To do:**
 #   
-#   -   Use scope tools to pull in all the reports (count matrices for the TEs and the genes)
+# -   Use scope tools to pull in all the reports (count matrices for the TEs 
+#     and the genes)
 # -   Concatenate (rbind) the matrices
-# -   We will have 27 to 25 columns, and roughly 80,0000 features in that matrix of counts
-# -   Run DESEq2 on all of those together to normalize them (design will just be \~0 or a \~1, since this is an unsupervised matrix, and we are just trying to normalize the counts).
+# -   We will have 27 to 25 columns, and roughly 80,0000 features in that matrix 
+#     of counts
+# -   Run DESEq2 on all of those together to normalize them (design will just be 
+#     \~0 or a \~1, since this is an unsupervised matrix, and we are just trying 
+#     to normalize the counts).
 # -   Within each tissue, everything can be compared to everything.
-# -   Subset the breast set, and do a rowSum / rowMeans to get the average expression of the normalized data of every feature. We'll have one normalized mean value for every feature within breast. And then, just rank those so that we know which TEs are expressed.
-# -   Now we know what is expressed / not expressed. We'll set a threshold of 5 for the normalized mean count?
-#   -   Of the ones that are expressed in bulk, do we see them in single cell, and what is the pattern?
+# -   Subset the breast set, and do a rowSum / rowMeans to get the average 
+#     expression of the normalized data of every feature. We'll have one 
+#     normalized mean value for every feature within breast. And then, just rank 
+#     those so that we know which TEs are expressed.
+# -   Now we know what is expressed / not expressed. We'll set a threshold of 5 
+#     for the normalized mean count?
+# -   Of the ones that are expressed in bulk, do we see them in single cell, and 
+#     what is the pattern?
 #   
 #   **Comparison:**
 #   
-#   -   Go down the list of ranked TEs that are expressed in the tissues. Are these TEs expressed in at least some of the cells in single cell?
-#   -   We want to start looking at the highest expressed ones. Is it highly expressed also in single cell?
+#   -   Go down the list of ranked TEs that are expressed in the tissues. Are 
+#       these TEs expressed in at least some of the cells in single cell?
+#   -   We want to start looking at the highest expressed ones. Is it highly 
+#       expressed also in single cell?
 #   -   It will be interesting if there are things that are missed
-# -   if it is seen in bulk, why is it missed in single cell?
+#   -   if it is seen in bulk, why is it missed in single cell?
 #   -   Is this actually calling everything at the single cell level?
 #   
 #   **Sample by sample comparison:**
 #   
-#   -   In addition to looking at the mean of the breast and prostate, we can also do a sample to sample comparison.
+# -   In addition to looking at the mean of the breast and prostate, we can also 
+#     do a sample to sample comparison.
 # -   Do the sample process where everything is normalized together.
-# -   We could do this on a count level (since we're just using ranks), on a sample-by-sample basis. Direct comparison of bulk samples to single cell samples.
+# -   We could do this on a count level (since we're just using ranks), on a 
+#     sample-by-sample basis. Direct comparison of bulk samples to single cell 
+#     samples.
 # 
 # **At the end, save an RData object of the following:**
 # 
@@ -40,7 +54,9 @@
 # 
 # **Next analysis:**
 # 
-# -   Once I've started looking at the bulk, the next thing is to explore the h5 files to find the published cell types
+# -   Once I've started looking at the bulk, the next thing is to explore the h5 
+#     files to find the published cell types
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -61,7 +77,10 @@ row.names(samples) <- samples$bulk_RNAseq
 sample_names <- samples$bulk_RNAseq
 
 ## load annotation
-retro.hg38.v1 <- readr::read_tsv("https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/retro.hg38.v1/genes.tsv.gz", na=c('.'))
+retro.hg38.v1 <- 
+  readr::read_tsv(
+    "https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/retro.hg38.v1/genes.tsv.gz", 
+                                 na=c('.'))
 retro.hg38.v1 <- retro.hg38.v1 %>%
   tidyr::separate(locus, c("family"), sep='_', remove=F, extra='drop') %>%
   dplyr::mutate(
@@ -82,7 +101,9 @@ t_files <- file.path("results/telescope",
 names(t_files) <- samples$bulk_RNAseq
 
 # Load TE counts
-counts.rtx <- load_telescope_reports(t_files, all_locs=retro.hg38.v1$locus, count_column = "count")
+counts.rtx <- load_telescope_reports(t_files, 
+                                     all_locs=retro.hg38.v1$locus, 
+                                     count_column = "count")
 
 # remove unused variables
 remove(t_files, ddir)
