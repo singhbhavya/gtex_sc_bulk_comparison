@@ -50,6 +50,7 @@
 
 library(tidyr)
 library(scopetools)
+library(DESeq2)
 
 ################################### METADATA ####################################
 # Read in sample metadata
@@ -141,4 +142,62 @@ stopifnot(all(names(counts) == row.names(samples)))
 
 # Remove unused vairbles
 remove(reorder_idx_counts.tx, reorder_idx_counts.rtx)
+
+#################################### DESeq2 ####################################
+
+dds <- DESeq2::DESeqDataSetFromMatrix(
+  counts, samples, ~1)
+
+dds <- DESeq2::DESeq(dds, parallel=T)
+dds <- estimateSizeFactors(dds)
+
+counts.norm <- counts(dds, normalized=TRUE)
+
+boxplot(counts.norm, main = "Normalized Counts", cex = 0.6)
+boxplot(counts(dds), main = "Raw Counts", cex = 0.6)
+
+###############################################################################
+## Get average expression of the normalized data of every feature per tissue ##
+###############################################################################
+
+# Subset normalized counts to only include TEs
+counts.norm.rtx <- counts.norm[row.names(retro.annot),]
+
+# Function to create df of normalized count for a given tissue type
+get_tissue_samples <- function(i) {
+  tissue_sample_names <- samples$bulk_RNAseq[samples$tissue == i]
+  
+  df <- as.data.frame(rowMeans(counts.norm.rtx[, tissue_sample_names])) 
+  colnames(df) <- c("mean_counts")
+  df <- df[order(-df$mean_counts), , drop = FALSE]
+  assign(paste(i, "norm", sep="."), df, envir=.GlobalEnv)
+  
+  df_raw <- as.data.frame(rowMeans(counts.rtx[, tissue_sample_names])) 
+  colnames(df_raw) <- c("mean_counts")
+  df_raw <- df_raw[order(-df_raw$mean_counts), , drop = FALSE]
+  assign(paste(i, "raw", sep="."), df_raw, envir=.GlobalEnv)
+  
+  remove(df, df_raw, tissue_sample_names)
+}
+
+# Apply function to all tissue types
+invisible(lapply(unique(samples$tissue), get_tissue_samples))
+
+# Save all ordered & mean normalized TE counts per tissue sample
+save(counts.norm.rtx, Breast.norm, E_Mucosa.norm, E_Muscularis.norm, Heart.norm, 
+     Lung.norm, Prostate.norm, Sk_muscle.norm, Skin.norm,
+     file="r_outputs/01-mean_normalized_TE_counts_by_tissue_type.RData")
+
+# Save all ordered &  mean raw TE counts per tissue sample
+save(counts.rtx, Breast.raw, E_Mucosa.raw, E_Muscularis.raw, Heart.raw, 
+     Lung.raw, Prostate.raw, Sk_muscle.raw, Skin.raw,
+     file="r_outputs/01-mean_raw_TE_counts_by_tissue_type.RData")
+
+remove(Breast.norm, E_Mucosa.norm, E_Muscularis.norm, Heart.norm, 
+       Lung.norm, Prostate.norm, Sk_muscle.norm, Skin.norm,
+       Breast.raw, E_Mucosa.raw, E_Muscularis.raw, Heart.raw, 
+       Lung.raw, Prostate.raw, Sk_muscle.raw, Skin.raw)
+
+save(counts, counts.rtx, counts.tx, counts.norm, counts.norm.rtx, samples, 
+     file="r_outputs/counts.Rdata")
 
