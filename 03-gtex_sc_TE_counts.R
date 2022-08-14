@@ -254,4 +254,24 @@ names(te.total.counts.norm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_
 
 pseudobulk_te.counts.norm <- data.frame(te.total.counts.norm) 
 
+# Original Seurat Objects
+
+save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
+     GTEX_13N11_5030_SM_H5JDW.seurat.norm, GTEX_144GM_5010_SM_HD2M8.seurat.norm,
+     GTEX_145ME_5005_SM_H8L6T.seurat.norm, GTEX_145ME_5018_SM_G8XQB.seurat.norm,
+     GTEX_15CHR_5005_SM_H5JDT.seurat.norm, GTEX_15CHR_5014_SM_H5JDU.seurat.norm,
+     GTEX_15EOM_5003_SM_G64IH.seurat.norm, GTEX_15RIE_5015_SM_H8L6X.seurat.norm,
+     GTEX_15RIE_5021_SM_H8L6Y.seurat.norm, GTEX_15SB6_5008_SM_H8L72.seurat.norm,
+     GTEX_16BQI_5013_SM_H8SUW.seurat.norm, GTEX_1CAMR_5015_SM_HPJ3B.seurat.norm,
+     GTEX_1CAMS_5015_SM_HPJ3C.seurat.norm, GTEX_1HSMQ_5021_SM_HD2MA.seurat.norm,
+     GTEX_1HSMQ_5005_SM_GKSJF.seurat.norm, GTEX_1HSMQ_5011_SM_GKSJH.seurat.norm,
+     GTEX_1HSMQ_5014_SM_GKSJI.seurat.norm, GTEX_1HSMQ_5007_SM_GKSJG.seurat.norm,
+     GTEX_1I1GU_5006_SM_G8XQC.seurat.norm, GTEX_1ICG6_5014_SM_GHS9D.seurat.norm,
+     GTEX_1ICG6_5003_SM_GHS9A.seurat.norm, GTEX_1MCC2_5013_SM_HPJ3D.seurat.norm,
+     GTEX_1R9PN_5002_SM_HD2MC.seurat.norm, samples,
+     file = "r_outputs/03-gtex_seurat.norm.Rdata")
+
+# Save count files
+save(pseudobulk_te.counts.norm, pseudobulk_te.counts.raw,
+     file = "r_outputs/03-scgtex_seurat_counts.Rdata")
 
