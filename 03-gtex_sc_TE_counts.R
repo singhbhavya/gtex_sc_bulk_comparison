@@ -14,21 +14,41 @@
 #   Figure 4:
 #     - Bar plots of the highest TEs
 #     - Top 10 TEs per tissue type, compared to the proportion of the TEs within 
-#       cell types in each tissue type
-#     - Look sample by sample
+#       cell types in each tissue type (Generate figures for each sample AND for)
+#       each tissue. 
 #     - What are the top 10 TEs in the single cell sample, and see where they are 
-#       in bulk
+#       in bulk.
 #     - Get the percent TE from the bulk and the single cells:
-#     - compare sample by sample
-#     - Compare tissue by tissue
+#         - Compare sample by sample.
+#         - Compare tissue by tissue.
 #     - Is there a difference? 
 #     - Does more TE expression mean in general more immune targets?
+#     - Top 50 loci in bulk and single-cell pseudobulk, do a union / intersection
+#       of both, see the trend. 
 #
 # - Display the concordance between bulk and single cell:
 #     - What about statistically? 
 #     - Spearman - rank the genes, raw counts.
+#         - How will do they correlate?
+#         - Get the residuals to see which ones are detected in one and not the
+#           other. (Use the residuals R function, it works on any fit, can plot)
+#           the residuals as well. 
 # - PCA of 25 pseudobulks vs 25 actual bulks, connecting lines between samples
 # - UMAP of pseudobulk vs bulk
+
+#   Things to look up / to do:
+#     - Base mean for each gene in the Seurat objects
+#     - Get cpm for both pseudobulk and the bulk (same as counts, ranks don't
+#       change, but we can now compare sample to sample).
+#     - Don't use the Seurat or the DESeq2 normalization for pseudobulk/bulk.
+#
+#   Comparisons to make
+#     - Sample-wise (true pseudobulk): One column for each sample, rows for each 
+#       feature.
+#     - Compare to single-cell matrix, One column for each cell (all the cells),
+#       rows for each feature
+#     
+
 
 ################################################################################
 ################################################################################
