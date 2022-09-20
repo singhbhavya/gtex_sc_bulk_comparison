@@ -67,6 +67,7 @@
 library(tidyr)
 library(scopetools)
 library(DESeq2)
+library(edgeR)
 
 ################################### METADATA ####################################
 # Read in sample metadata
@@ -164,6 +165,10 @@ stopifnot(all(names(counts) == row.names(samples)))
 # Remove unused vairbles
 remove(reorder_idx_counts.tx, reorder_idx_counts.rtx)
 
+##################################### CPM ######################################
+
+counts.cpm <- cpm(counts)
+
 #################################### DESeq2 ####################################
 
 dds <- DESeq2::DESeqDataSetFromMatrix(
@@ -184,6 +189,9 @@ boxplot(counts(dds), main = "Raw Counts", cex = 0.6)
 # Subset normalized counts to only include TEs
 counts.norm.rtx <- counts.norm[row.names(retro.annot),]
 
+# Subset normalized counts to only include TEs
+counts.cpm.rtx <- counts.cpm[row.names(retro.annot),]
+
 # Function to create df of normalized count for a given tissue type
 get_tissue_samples <- function(i) {
   tissue_sample_names <- samples$bulk_RNAseq[samples$tissue == i]
@@ -198,7 +206,12 @@ get_tissue_samples <- function(i) {
   df_raw <- df_raw[order(-df_raw$mean_counts), , drop = FALSE]
   assign(paste(i, "raw", sep="."), df_raw, envir=.GlobalEnv)
   
-  remove(df, df_raw, tissue_sample_names)
+  df_cpm <- as.data.frame(rowMeans(counts.cpm.rtx[, tissue_sample_names])) 
+  colnames(df_cpm) <- c("mean_counts")
+  df_cpm <- df_cpm[order(-df_cpm$mean_counts), , drop = FALSE]
+  assign(paste(i, "cpm", sep="."), df_cpm, envir=.GlobalEnv)
+  
+  remove(df, df_raw, df_cpm, tissue_sample_names)
 }
 
 # Apply function to all tissue types
@@ -214,11 +227,18 @@ save(counts.rtx, Breast.raw, E_Mucosa.raw, E_Muscularis.raw, Heart.raw,
      Lung.raw, Prostate.raw, Sk_muscle.raw, Skin.raw,
      file="r_outputs/01-mean_raw_TE_counts_by_tissue_type.RData")
 
+# Save all ordered &  mean TE CPMs per tissue sample
+save(counts.cpm.rtx, Breast.cpm, E_Mucosa.cpm, E_Muscularis.cpm, Heart.cpm, 
+     Lung.cpm, Prostate.cpm, Sk_muscle.cpm, Skin.cpm,
+     file="r_outputs/01-mean_raw_TE_counts_by_tissue_type.RData")
+
+save(counts, counts.rtx, counts.tx, counts.norm, counts.norm.rtx, 
+     counts.cpm, counts.cpm.rtx, samples, 
+     file="r_outputs/counts.Rdata")
+
 remove(Breast.norm, E_Mucosa.norm, E_Muscularis.norm, Heart.norm, 
        Lung.norm, Prostate.norm, Sk_muscle.norm, Skin.norm,
        Breast.raw, E_Mucosa.raw, E_Muscularis.raw, Heart.raw, 
-       Lung.raw, Prostate.raw, Sk_muscle.raw, Skin.raw)
-
-save(counts, counts.rtx, counts.tx, counts.norm, counts.norm.rtx, samples, 
-     file="r_outputs/counts.Rdata")
-
+       Lung.raw, Prostate.raw, Sk_muscle.raw, Skin.raw,
+       Breast.cpm, E_Mucosa.cpm, E_Muscularis.cpm, Heart.cpm, 
+       Lung.cpm, Prostate.cpm, Sk_muscle.cpm, Skin.cpm)
