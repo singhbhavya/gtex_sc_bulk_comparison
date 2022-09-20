@@ -60,6 +60,7 @@ library(tidyr)
 library(scopetools)
 library(scater)
 library(Seurat)
+library(edgeR)
 
 ################################### METADATA ####################################
 # Read in sample metadata
@@ -89,12 +90,11 @@ load_all_seurat <- function(i) {
   
   seurat_object <- 
     scopetools::load_stellarscope_seurat(stellarscope_dir = 
-                                         paste("results/stellarscope_pseudobulk/", i, "/", sep = ""),
-                                       TE_count_file = 
-                                         paste("results/stellarscope_pseudobulk/", i, "/", i, "_pseudobulk-TE_counts_exclude.mtx", sep=""),
+                                         paste("results/stellarscope_pseudobulk/", i, "_rep1_U/", sep = ""),
                                        starsolo_dir = 
-                                         paste("results/starsolo_alignment/", i, "/", i, ".Solo.out/Gene/filtered/", sep = ""))
-  
+                                         paste("results/starsolo_alignment/", i, "/", i, ".Solo.out/Gene/filtered/", sep = ""),
+                                       exp_tag = paste(i, "_pseudobulk_U", sep = ""))
+
   assign(paste(sample_name, "seurat", sep="."), seurat_object, envir=.GlobalEnv)
   }
 
@@ -178,7 +178,7 @@ get_feature_counts_sum <- function(seurat.object) {
   # get matrix
   seurat.object@assays$RNA@counts %>% Matrix::rowSums() -> features.total.counts
   # keep only TE features
-  # features.total.counts <- features.total.counts[!grepl("^ENSG", names(features.total.counts))]
+  features.total.counts <- features.total.counts[!grepl("^ENSG", names(features.total.counts))]
   return(features.total.counts)
 }
 
@@ -213,6 +213,7 @@ names(te.total.counts) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV
                             "GTEX_1R9PN_5002_SM_HD2MC")
 
 pseudobulk_te.counts.raw <- data.frame(te.total.counts) 
+pseudobulk_te.cpm.raw <- cpm(pseudobulk_te.counts.raw)
 
 ########################## GET NORMALIZED TE COUNTS ############################
 
@@ -274,6 +275,117 @@ names(te.total.counts.norm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_
 
 pseudobulk_te.counts.norm <- data.frame(te.total.counts.norm) 
 
+########################### GET CPM THROUGH SEURAT #############################
+
+GTEX_12BJ1_5007_SM_H8L6U.seurat.norm.cpm <- NormalizeData(GTEX_12BJ1_5007_SM_H8L6U.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_13N11_5002_SM_H5JDV.seurat.norm.cpm <- NormalizeData(GTEX_13N11_5002_SM_H5JDV.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_13N11_5030_SM_H5JDW.seurat.norm.cpm <- NormalizeData(GTEX_13N11_5030_SM_H5JDW.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_144GM_5010_SM_HD2M8.seurat.norm.cpm <- NormalizeData(GTEX_144GM_5010_SM_HD2M8.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_145ME_5005_SM_H8L6T.seurat.norm.cpm <- NormalizeData(GTEX_145ME_5005_SM_H8L6T.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_145ME_5018_SM_G8XQB.seurat.norm.cpm <- NormalizeData(GTEX_145ME_5018_SM_G8XQB.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_15CHR_5005_SM_H5JDT.seurat.norm.cpm <- NormalizeData(GTEX_15CHR_5005_SM_H5JDT.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_15CHR_5014_SM_H5JDU.seurat.norm.cpm <- NormalizeData(GTEX_15CHR_5014_SM_H5JDU.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_15EOM_5003_SM_G64IH.seurat.norm.cpm <- NormalizeData(GTEX_15EOM_5003_SM_G64IH.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_15RIE_5015_SM_H8L6X.seurat.norm.cpm <- NormalizeData(GTEX_15RIE_5015_SM_H8L6X.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_15RIE_5021_SM_H8L6Y.seurat.norm.cpm <- NormalizeData(GTEX_15RIE_5021_SM_H8L6Y.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_15SB6_5008_SM_H8L72.seurat.norm.cpm <- NormalizeData(GTEX_15SB6_5008_SM_H8L72.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_16BQI_5013_SM_H8SUW.seurat.norm.cpm <- NormalizeData(GTEX_16BQI_5013_SM_H8SUW.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1CAMR_5015_SM_HPJ3B.seurat.norm.cpm <- NormalizeData(GTEX_1CAMR_5015_SM_HPJ3B.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1CAMS_5015_SM_HPJ3C.seurat.norm.cpm <- NormalizeData(GTEX_1CAMS_5015_SM_HPJ3C.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1HSMQ_5021_SM_HD2MA.seurat.norm.cpm <- NormalizeData(GTEX_1HSMQ_5021_SM_HD2MA.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1HSMQ_5005_SM_GKSJF.seurat.norm.cpm <- NormalizeData(GTEX_1HSMQ_5005_SM_GKSJF.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1HSMQ_5011_SM_GKSJH.seurat.norm.cpm <- NormalizeData(GTEX_1HSMQ_5011_SM_GKSJH.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1HSMQ_5014_SM_GKSJI.seurat.norm.cpm <- NormalizeData(GTEX_1HSMQ_5014_SM_GKSJI.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1HSMQ_5007_SM_GKSJG.seurat.norm.cpm <- NormalizeData(GTEX_1HSMQ_5007_SM_GKSJG.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1I1GU_5006_SM_G8XQC.seurat.norm.cpm <- NormalizeData(GTEX_1I1GU_5006_SM_G8XQC.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1ICG6_5014_SM_GHS9D.seurat.norm.cpm <- NormalizeData(GTEX_1ICG6_5014_SM_GHS9D.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1ICG6_5003_SM_GHS9A.seurat.norm.cpm <- NormalizeData(GTEX_1ICG6_5003_SM_GHS9A.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1MCC2_5013_SM_HPJ3D.seurat.norm.cpm <- NormalizeData(GTEX_1MCC2_5013_SM_HPJ3D.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+GTEX_1R9PN_5002_SM_HD2MC.seurat.norm.cpm <- NormalizeData(GTEX_1R9PN_5002_SM_HD2MC.seurat.qc,
+                                                      normalization.method = "RC",
+                                                      scale.factor = 1e6)
+
+te.total.counts.norm.cpm <- 
+  lapply(list(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm.cpm,GTEX_13N11_5002_SM_H5JDV.seurat.norm.cpm,
+              GTEX_13N11_5030_SM_H5JDW.seurat.norm.cpm, GTEX_144GM_5010_SM_HD2M8.seurat.norm.cpm,
+              GTEX_145ME_5005_SM_H8L6T.seurat.norm.cpm, GTEX_145ME_5018_SM_G8XQB.seurat.norm.cpm,
+              GTEX_15CHR_5005_SM_H5JDT.seurat.norm.cpm, GTEX_15CHR_5014_SM_H5JDU.seurat.norm.cpm,
+              GTEX_15EOM_5003_SM_G64IH.seurat.norm.cpm, GTEX_15RIE_5015_SM_H8L6X.seurat.norm.cpm,
+              GTEX_15RIE_5021_SM_H8L6Y.seurat.norm.cpm, GTEX_15SB6_5008_SM_H8L72.seurat.norm.cpm,
+              GTEX_16BQI_5013_SM_H8SUW.seurat.norm.cpm, GTEX_1CAMR_5015_SM_HPJ3B.seurat.norm.cpm,
+              GTEX_1CAMS_5015_SM_HPJ3C.seurat.norm.cpm, GTEX_1HSMQ_5021_SM_HD2MA.seurat.norm.cpm,
+              GTEX_1HSMQ_5005_SM_GKSJF.seurat.norm.cpm, GTEX_1HSMQ_5011_SM_GKSJH.seurat.norm.cpm,
+              GTEX_1HSMQ_5014_SM_GKSJI.seurat.norm.cpm, GTEX_1HSMQ_5007_SM_GKSJG.seurat.norm.cpm,
+              GTEX_1I1GU_5006_SM_G8XQC.seurat.norm.cpm, GTEX_1ICG6_5014_SM_GHS9D.seurat.norm.cpm,
+              GTEX_1ICG6_5003_SM_GHS9A.seurat.norm.cpm, GTEX_1MCC2_5013_SM_HPJ3D.seurat.norm.cpm,
+              GTEX_1R9PN_5002_SM_HD2MC.seurat.norm.cpm),
+         get_feature_counts_sum)
+
+names(te.total.counts.norm.cpm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
+                                 "GTEX_13N11_5030_SM_H5JDW", "GTEX_144GM_5010_SM_HD2M8",
+                                 "GTEX_145ME_5005_SM_H8L6T", "GTEX_145ME_5018_SM_G8XQB",
+                                 "GTEX_15CHR_5005_SM_H5JDT", "GTEX_15CHR_5014_SM_H5JDU",
+                                 "GTEX_15EOM_5003_SM_G64IH", "GTEX_15RIE_5015_SM_H8L6X",
+                                 "GTEX_15RIE_5021_SM_H8L6Y", "GTEX_15SB6_5008_SM_H8L72",
+                                 "GTEX_16BQI_5013_SM_H8SUW", "GTEX_1CAMR_5015_SM_HPJ3B",
+                                 "GTEX_1CAMS_5015_SM_HPJ3C", "GTEX_1HSMQ_5021_SM_HD2MA",
+                                 "GTEX_1HSMQ_5005_SM_GKSJF", "GTEX_1HSMQ_5011_SM_GKSJH",
+                                 "GTEX_1HSMQ_5014_SM_GKSJI", "GTEX_1HSMQ_5007_SM_GKSJG",
+                                 "GTEX_1I1GU_5006_SM_G8XQC", "GTEX_1ICG6_5014_SM_GHS9D",
+                                 "GTEX_1ICG6_5003_SM_GHS9A", "GTEX_1MCC2_5013_SM_HPJ3D",
+                                 "GTEX_1R9PN_5002_SM_HD2MC")
+
+pseudobulk_te.counts.norm.cpm <- data.frame(te.total.counts.norm.cpm) 
+
+
 # Original Seurat Objects
 
 save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
@@ -292,6 +404,7 @@ save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
      file = "r_outputs/03-gtex_seurat.norm.Rdata")
 
 # Save count files
-save(pseudobulk_te.counts.norm, pseudobulk_te.counts.raw,
+save(pseudobulk_te.counts.norm, pseudobulk_te.counts.raw, 
+     pseudobulk_te.counts.norm.cpm, pseudobulk_te.cpm.raw,
      file = "r_outputs/03-scgtex_seurat_counts.Rdata")
 
