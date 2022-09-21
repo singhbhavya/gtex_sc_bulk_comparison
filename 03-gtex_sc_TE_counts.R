@@ -61,6 +61,8 @@ library(scopetools)
 library(scater)
 library(Seurat)
 library(edgeR)
+library(Seurat)
+library(SeuratObject)
 
 ################################### METADATA ####################################
 # Read in sample metadata
@@ -72,15 +74,20 @@ samples$sn_RNAseq_names <- gsub("-", "_", samples$sn_RNAseq)
 sample_names <- samples$sn_RNAseq_names
 
 ## load annotation
-retro.hg38.v1 <- 
+retro.hg38.v1 <-
   readr::read_tsv(
-    "https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/retro.hg38.v1/genes.tsv.gz", 
+    "https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/retro.hg38.v1/genes.tsv.gz",
     na=c('.'))
 retro.hg38.v1 <- retro.hg38.v1 %>%
   tidyr::separate(locus, c("family"), sep='_', remove=F, extra='drop') %>%
   dplyr::mutate(
     te_class = factor(ifelse(is.na(l1base_id), 'LTR', 'LINE'), levels=c('LTR','LINE')),
   )
+
+retro.annot <- retro.hg38.v1
+remove(retro.hg38.v1)
+retro.annot$locus <- sub("_", "-", retro.annot$locus)
+row.names(retro.annot) <- retro.annot$locus
 
 ################################# LOAD SEURAT ##################################
 
@@ -178,11 +185,11 @@ get_feature_counts_sum <- function(seurat.object) {
   # get matrix
   seurat.object@assays$RNA@counts %>% Matrix::rowSums() -> features.total.counts
   # keep only TE features
-  features.total.counts <- features.total.counts[!grepl("^ENSG", names(features.total.counts))]
+  # features.total.counts <- features.total.counts[!grepl("^ENSG", names(features.total.counts))]
   return(features.total.counts)
 }
 
-te.total.counts <- 
+sc.counts.list <- 
   lapply(list(GTEX_12BJ1_5007_SM_H8L6U.seurat.qc,GTEX_13N11_5002_SM_H5JDV.seurat.qc,
               GTEX_13N11_5030_SM_H5JDW.seurat.qc, GTEX_144GM_5010_SM_HD2M8.seurat.qc,
               GTEX_145ME_5005_SM_H8L6T.seurat.qc, GTEX_145ME_5018_SM_G8XQB.seurat.qc,
@@ -198,7 +205,7 @@ te.total.counts <-
               GTEX_1R9PN_5002_SM_HD2MC.seurat.qc),
          get_feature_counts_sum)
 
-names(te.total.counts) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
+names(sc.counts.list) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
                             "GTEX_13N11_5030_SM_H5JDW", "GTEX_144GM_5010_SM_HD2M8",
                             "GTEX_145ME_5005_SM_H8L6T", "GTEX_145ME_5018_SM_G8XQB",
                             "GTEX_15CHR_5005_SM_H5JDT", "GTEX_15CHR_5014_SM_H5JDU",
@@ -212,10 +219,19 @@ names(te.total.counts) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV
                             "GTEX_1ICG6_5003_SM_GHS9A", "GTEX_1MCC2_5013_SM_HPJ3D",
                             "GTEX_1R9PN_5002_SM_HD2MC")
 
-pseudobulk_te.counts.raw <- data.frame(te.total.counts) 
-pseudobulk_te.cpm.raw <- cpm(pseudobulk_te.counts.raw)
+pseudobulk.counts.raw <- data.frame(sc.counts.list) 
+pseudobulk.cpm.raw <- cpm(pseudobulk.counts.raw)
 
 ########################## GET NORMALIZED TE COUNTS ############################
+
+get_norm_feature_counts_sum <- function(seurat.object) {
+  
+  # get matrix
+  seurat.object@assays$RNA@data %>% Matrix::rowSums() -> features.total.counts
+  # keep only TE features
+  # features.total.counts <- features.total.counts[!grepl("^ENSG", names(features.total.counts))]
+  return(features.total.counts)
+}
 
 GTEX_12BJ1_5007_SM_H8L6U.seurat.norm <- NormalizeData(GTEX_12BJ1_5007_SM_H8L6U.seurat.qc)
 GTEX_13N11_5002_SM_H5JDV.seurat.norm <- NormalizeData(GTEX_13N11_5002_SM_H5JDV.seurat.qc)
@@ -243,7 +259,7 @@ GTEX_1ICG6_5003_SM_GHS9A.seurat.norm <- NormalizeData(GTEX_1ICG6_5003_SM_GHS9A.s
 GTEX_1MCC2_5013_SM_HPJ3D.seurat.norm <- NormalizeData(GTEX_1MCC2_5013_SM_HPJ3D.seurat.qc)
 GTEX_1R9PN_5002_SM_HD2MC.seurat.norm <- NormalizeData(GTEX_1R9PN_5002_SM_HD2MC.seurat.qc)
 
-te.total.counts.norm <- 
+sc.counts.norm.list <- 
   lapply(list(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
               GTEX_13N11_5030_SM_H5JDW.seurat.norm, GTEX_144GM_5010_SM_HD2M8.seurat.norm,
               GTEX_145ME_5005_SM_H8L6T.seurat.norm, GTEX_145ME_5018_SM_G8XQB.seurat.norm,
@@ -257,9 +273,9 @@ te.total.counts.norm <-
               GTEX_1I1GU_5006_SM_G8XQC.seurat.norm, GTEX_1ICG6_5014_SM_GHS9D.seurat.norm,
               GTEX_1ICG6_5003_SM_GHS9A.seurat.norm, GTEX_1MCC2_5013_SM_HPJ3D.seurat.norm,
               GTEX_1R9PN_5002_SM_HD2MC.seurat.norm),
-         get_feature_counts_sum)
+         get_norm_feature_counts_sum)
 
-names(te.total.counts.norm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
+names(sc.counts.norm.list) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
                             "GTEX_13N11_5030_SM_H5JDW", "GTEX_144GM_5010_SM_HD2M8",
                             "GTEX_145ME_5005_SM_H8L6T", "GTEX_145ME_5018_SM_G8XQB",
                             "GTEX_15CHR_5005_SM_H5JDT", "GTEX_15CHR_5014_SM_H5JDU",
@@ -273,7 +289,7 @@ names(te.total.counts.norm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_
                             "GTEX_1ICG6_5003_SM_GHS9A", "GTEX_1MCC2_5013_SM_HPJ3D",
                             "GTEX_1R9PN_5002_SM_HD2MC")
 
-pseudobulk_te.counts.norm <- data.frame(te.total.counts.norm) 
+pseudobulk.counts.norm <- data.frame(sc.counts.norm.list) 
 
 ########################### GET CPM THROUGH SEURAT #############################
 
@@ -353,7 +369,7 @@ GTEX_1R9PN_5002_SM_HD2MC.seurat.norm.cpm <- NormalizeData(GTEX_1R9PN_5002_SM_HD2
                                                       normalization.method = "RC",
                                                       scale.factor = 1e6)
 
-te.total.counts.norm.cpm <- 
+sc.seurat.cpm.list <- 
   lapply(list(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm.cpm,GTEX_13N11_5002_SM_H5JDV.seurat.norm.cpm,
               GTEX_13N11_5030_SM_H5JDW.seurat.norm.cpm, GTEX_144GM_5010_SM_HD2M8.seurat.norm.cpm,
               GTEX_145ME_5005_SM_H8L6T.seurat.norm.cpm, GTEX_145ME_5018_SM_G8XQB.seurat.norm.cpm,
@@ -367,9 +383,9 @@ te.total.counts.norm.cpm <-
               GTEX_1I1GU_5006_SM_G8XQC.seurat.norm.cpm, GTEX_1ICG6_5014_SM_GHS9D.seurat.norm.cpm,
               GTEX_1ICG6_5003_SM_GHS9A.seurat.norm.cpm, GTEX_1MCC2_5013_SM_HPJ3D.seurat.norm.cpm,
               GTEX_1R9PN_5002_SM_HD2MC.seurat.norm.cpm),
-         get_feature_counts_sum)
+         get_norm_feature_counts_sum)
 
-names(te.total.counts.norm.cpm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
+names(sc.seurat.cpm.list) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
                                  "GTEX_13N11_5030_SM_H5JDW", "GTEX_144GM_5010_SM_HD2M8",
                                  "GTEX_145ME_5005_SM_H8L6T", "GTEX_145ME_5018_SM_G8XQB",
                                  "GTEX_15CHR_5005_SM_H5JDT", "GTEX_15CHR_5014_SM_H5JDU",
@@ -383,10 +399,90 @@ names(te.total.counts.norm.cpm) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002
                                  "GTEX_1ICG6_5003_SM_GHS9A", "GTEX_1MCC2_5013_SM_HPJ3D",
                                  "GTEX_1R9PN_5002_SM_HD2MC")
 
-pseudobulk_te.counts.norm.cpm <- data.frame(te.total.counts.norm.cpm) 
+pseudobulk.cpm.seurat <- data.frame(sc.seurat.cpm.list) 
+
+################################# SUBSET TEs ###################################
+
+pseudobulk.rtx.counts.raw <- pseudobulk.counts.raw[rownames(retro.annot),]
+pseudobulk.rtx.counts.norm <- pseudobulk.counts.norm[rownames(retro.annot),]
+pseudobulk.rtx.cpm.raw <- as.data.frame(pseudobulk.cpm.raw)[rownames(retro.annot),]
+pseudobulk.rtx.cpm.seurat <- as.data.frame(pseudobulk.cpm.seurat)[rownames(retro.annot),]
 
 
-# Original Seurat Objects
+###################### PSEUDOBULK MATRICES THROUGH SEURAT ######################
+
+get_pseudobulk_matrices <- function(seurat.object) {
+
+  # calculate pseudobulk expression
+  AggregateExpression(seurat.object,
+                      slot = "counts") -> pseudobulk_matrix
+  return(pseudobulk_matrix)
+}
+
+sc.seurat.pseudobulk.list <- 
+  lapply(list(GTEX_12BJ1_5007_SM_H8L6U.seurat.qc,GTEX_13N11_5002_SM_H5JDV.seurat.qc,
+              GTEX_13N11_5030_SM_H5JDW.seurat.qc, GTEX_144GM_5010_SM_HD2M8.seurat.qc,
+              GTEX_145ME_5005_SM_H8L6T.seurat.qc, GTEX_145ME_5018_SM_G8XQB.seurat.qc,
+              GTEX_15CHR_5005_SM_H5JDT.seurat.qc, GTEX_15CHR_5014_SM_H5JDU.seurat.qc,
+              GTEX_15EOM_5003_SM_G64IH.seurat.qc, GTEX_15RIE_5015_SM_H8L6X.seurat.qc,
+              GTEX_15RIE_5021_SM_H8L6Y.seurat.qc, GTEX_15SB6_5008_SM_H8L72.seurat.qc,
+              GTEX_16BQI_5013_SM_H8SUW.seurat.qc, GTEX_1CAMR_5015_SM_HPJ3B.seurat.qc,
+              GTEX_1CAMS_5015_SM_HPJ3C.seurat.qc, GTEX_1HSMQ_5021_SM_HD2MA.seurat.qc,
+              GTEX_1HSMQ_5005_SM_GKSJF.seurat.qc, GTEX_1HSMQ_5011_SM_GKSJH.seurat.qc,
+              GTEX_1HSMQ_5014_SM_GKSJI.seurat.qc, GTEX_1HSMQ_5007_SM_GKSJG.seurat.qc,
+              GTEX_1I1GU_5006_SM_G8XQC.seurat.qc, GTEX_1ICG6_5014_SM_GHS9D.seurat.qc,
+              GTEX_1ICG6_5003_SM_GHS9A.seurat.qc, GTEX_1MCC2_5013_SM_HPJ3D.seurat.qc,
+              GTEX_1R9PN_5002_SM_HD2MC.seurat.qc),
+         get_pseudobulk_matrices)
+
+pseudobulk.counts.aggregated.seurat <- data.frame(sc.seurat.pseudobulk.list) 
+names(pseudobulk.counts.aggregated.seurat) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV",
+                                      "GTEX_13N11_5030_SM_H5JDW", "GTEX_144GM_5010_SM_HD2M8",
+                                      "GTEX_145ME_5005_SM_H8L6T", "GTEX_145ME_5018_SM_G8XQB",
+                                      "GTEX_15CHR_5005_SM_H5JDT", "GTEX_15CHR_5014_SM_H5JDU",
+                                      "GTEX_15EOM_5003_SM_G64IH", "GTEX_15RIE_5015_SM_H8L6X",
+                                      "GTEX_15RIE_5021_SM_H8L6Y", "GTEX_15SB6_5008_SM_H8L72",
+                                      "GTEX_16BQI_5013_SM_H8SUW", "GTEX_1CAMR_5015_SM_HPJ3B",
+                                      "GTEX_1CAMS_5015_SM_HPJ3C", "GTEX_1HSMQ_5021_SM_HD2MA",
+                                      "GTEX_1HSMQ_5005_SM_GKSJF", "GTEX_1HSMQ_5011_SM_GKSJH",
+                                      "GTEX_1HSMQ_5014_SM_GKSJI", "GTEX_1HSMQ_5007_SM_GKSJG",
+                                      "GTEX_1I1GU_5006_SM_G8XQC", "GTEX_1ICG6_5014_SM_GHS9D",
+                                      "GTEX_1ICG6_5003_SM_GHS9A", "GTEX_1MCC2_5013_SM_HPJ3D",
+                                      "GTEX_1R9PN_5002_SM_HD2MC")
+
+pseudobulk.rtx.counts.aggregated.seurat <- 
+  pseudobulk.counts.aggregated.seurat[row.names(retro.annot),]
+
+pseudobulk.rtx.cpm.aggregated.seurat <- cpm(pseudobulk.rtx.counts.aggregated.seurat)
+
+# Error in cpm.default(pseudobulk.rtx.counts.aggregated.seurat) : 
+#  library sizes should be finite and non-negative
+
+###############################################################################
+## Get average expression of the normalized data of every feature per tissue ##
+###############################################################################
+
+# Function to create df of counts and cpm for a given tissue type
+get_tissue_samples <- function(i) {
+  tissue_sample_names <- samples$sn_RNAseq_names[samples$tissue == i]
+  
+  df_raw <- as.data.frame(rowMeans(pseudobulk.rtx.counts.raw[, tissue_sample_names])) 
+  colnames(df_raw) <- c("mean_counts")
+  df_raw <- df_raw[order(-df_raw$mean_counts), , drop = FALSE]
+  assign(paste(i, "sc", "raw", sep="."), df_raw, envir=.GlobalEnv)
+  
+  df_cpm <- as.data.frame(rowMeans(pseudobulk.rtx.cpm.raw[, tissue_sample_names])) 
+  colnames(df_cpm) <- c("mean_counts")
+  df_cpm <- df_cpm[order(-df_cpm$mean_counts), , drop = FALSE]
+  assign(paste(i, "sc", "cpm", sep="."), df_cpm, envir=.GlobalEnv)
+  
+  remove(df_raw, df_cpm, tissue_sample_names)
+}
+
+# Apply function to all tissue types
+invisible(lapply(unique(samples$tissue), get_tissue_samples))
+
+################################# SAVE FILES ###################################
 
 save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
      GTEX_13N11_5030_SM_H5JDW.seurat.norm, GTEX_144GM_5010_SM_HD2M8.seurat.norm,
@@ -404,7 +500,17 @@ save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
      file = "r_outputs/03-gtex_seurat.norm.Rdata")
 
 # Save count files
-save(pseudobulk_te.counts.norm, pseudobulk_te.counts.raw, 
-     pseudobulk_te.counts.norm.cpm, pseudobulk_te.cpm.raw,
+save(pseudobulk.rtx.counts.raw, pseudobulk.rtx.counts.norm, 
+     pseudobulk.rtx.cpm.raw,
      file = "r_outputs/03-scgtex_seurat_counts.Rdata")
+
+# Save all ordered &  mean raw TE counts per tissue sample
+save(pseudobulk.rtx.counts.raw, Breast.sc.raw, E_Mucosa.sc.raw, E_Muscularis.sc.raw, 
+     Heart.sc.raw, Lung.sc.raw, Prostate.sc.raw, Sk_muscle.sc.raw, Skin.sc.raw,
+     file="r_outputs/03-mean_raw_scTE_counts_by_tissue_type.RData")
+
+# Save all ordered &  mean raw TE counts per tissue sample
+save(pseudobulk.rtx.cpm.raw, Breast.sc.cpm, E_Mucosa.sc.cpm, E_Muscularis.sc.cpm, 
+     Heart.sc.cpm, Lung.sc.cpm, Prostate.sc.cpm, Sk_muscle.sc.cpm, Skin.sc.cpm,
+     file="r_outputs/03-mean_raw_scTE_cpm_by_tissue_type.RData")
 

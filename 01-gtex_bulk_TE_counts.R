@@ -230,11 +230,11 @@ save(counts.rtx, Breast.raw, E_Mucosa.raw, E_Muscularis.raw, Heart.raw,
 # Save all ordered &  mean TE CPMs per tissue sample
 save(counts.cpm.rtx, Breast.cpm, E_Mucosa.cpm, E_Muscularis.cpm, Heart.cpm, 
      Lung.cpm, Prostate.cpm, Sk_muscle.cpm, Skin.cpm,
-     file="r_outputs/01-mean_raw_TE_counts_by_tissue_type.RData")
+     file="r_outputs/01-mean_cpm_by_tissue_type.RData")
 
 save(counts, counts.rtx, counts.tx, counts.norm, counts.norm.rtx, 
      counts.cpm, counts.cpm.rtx, samples, 
-     file="r_outputs/counts.Rdata")
+     file="r_outputs/01-counts.Rdata")
 
 remove(Breast.norm, E_Mucosa.norm, E_Muscularis.norm, Heart.norm, 
        Lung.norm, Prostate.norm, Sk_muscle.norm, Skin.norm,
