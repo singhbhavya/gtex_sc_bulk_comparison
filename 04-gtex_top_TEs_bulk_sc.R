@@ -19,6 +19,11 @@ load("r_outputs/01-mean_cpm_by_tissue_type.RData")
 load("r_outputs/01-counts.Rdata")
 load("r_outputs/03-mean_raw_scTE_cpm_by_tissue_type.RData")
 
+################################## DATA SETUP ##################################
+
+row.names(samples) <- samples$sn_RNAseq
+samples$sn_RNAseq_names <- gsub("-", "_", samples$sn_RNAseq)
+
 ######################## TOP TEs PER TISSUE TYPE (BULK) ########################
   
 top_tes_per_tissue <- function(i) {
@@ -79,3 +84,58 @@ cowplot::plot_grid(plotlist = lapply(seq_along(sc_list), top_tes_per_tissue_sc),
 
 ggsave("plots/top_tes_per_tissue_sc.pdf", height=10, width=17)
 remove(sc_list)
+
+########################### TOP TEs PER SAMPLE (BULK) ##########################
+
+top_tes_per_sample <- function(i) {
+  
+  sample_counts <- as.data.frame(counts.cpm.rtx[,i])
+  colnames(sample_counts) <- "counts"
+  sample_counts <- tibble::rownames_to_column(sample_counts, "TEs")
+  sample_counts <- sample_counts[order(sample_counts$counts, decreasing = TRUE),] 
+  
+  ggplot(sample_counts[1:10,], 
+         aes(x= reorder(TEs, -counts), 
+             y=counts)) +
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(i) + 
+    geom_bar(stat='identity') 
+}
+
+cowplot::plot_grid(plotlist = lapply(samples$bulk_RNAseq, top_tes_per_sample), 
+                   ncol=5)
+
+ggsave("plots/top_tes_per_sample_bulk.pdf", height=20, width=20)
+
+############################ TOP TEs PER SAMPLE (SC) ###########################
+
+top_tes_per_sample_sc <- function(i) {
+  
+  sample_counts <- as.data.frame(pseudobulk.rtx.cpm.raw[,i, 
+                                                        drop=FALSE])
+  colnames(sample_counts) <- "counts"
+  sample_counts <- tibble::rownames_to_column(sample_counts, "TEs")
+  sample_counts <- sample_counts[order(sample_counts$counts, decreasing = TRUE),] 
+  
+  ggplot(sample_counts[1:10,], 
+         aes(x= reorder(TEs, -counts), 
+             y=counts)) +
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(i) + 
+    geom_bar(stat='identity') 
+}
+
+cowplot::plot_grid(plotlist = lapply(samples$sn_RNAseq_names, top_tes_per_sample_sc), 
+                   ncol=5)
+
+ggsave("plots/top_tes_per_sample_sc.pdf", height=20, width=20)
+
+
