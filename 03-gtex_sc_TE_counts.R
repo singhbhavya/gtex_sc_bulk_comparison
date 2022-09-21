@@ -63,6 +63,7 @@ library(Seurat)
 library(edgeR)
 library(Seurat)
 library(SeuratObject)
+library(rtracklayer)
 
 ################################### METADATA ####################################
 # Read in sample metadata
@@ -86,8 +87,37 @@ retro.hg38.v1 <- retro.hg38.v1 %>%
 
 retro.annot <- retro.hg38.v1
 remove(retro.hg38.v1)
-retro.annot$locus <- sub("_", "-", retro.annot$locus)
 row.names(retro.annot) <- retro.annot$locus
+
+# Load gtf 
+
+gtf <- rtracklayer::import("refs//gencode.v38.annotation.gtf")
+gtf_df=as.data.frame(gtf)
+gtf_df <-
+  gtf_df[,
+         c("gene_id", "seqnames", "start", "end", "strand", "width", "gene_name",
+           "gene_type")]
+
+
+colnames(gtf_df) <- c("gene_id", "chrom", "start", "end", "strand", "length",
+                      "gene_name", "gene_type")
+
+gene_table <- 
+  gtf_df[!duplicated(gtf_df[,c(1,7)]), ] %>% 
+  dplyr::select('gene_id', 'gene_name', 'gene_type')
+
+gene_table <- 
+  rbind(gene_table, data.frame(gene_id=retro.annot$locus, 
+                               gene_name=retro.annot$locus, 
+                               gene_type=retro.annot$te_class))
+rownames(gene_table) <- gene_table$gene_id
+
+gene_table$display <- gene_table$gene_name
+gene_table[duplicated(gene_table$gene_name), 'display'] <- 
+  paste(gene_table[duplicated(gene_table$gene_name), 'display'], 
+        gene_table[duplicated(gene_table$gene_name), 'gene_id'], sep='|')
+
+remove(retro.hg38.v1)
 
 ################################# LOAD SEURAT ##################################
 
@@ -100,7 +130,8 @@ load_all_seurat <- function(i) {
                                          paste("results/stellarscope_pseudobulk/", i, "_rep1_U/", sep = ""),
                                        starsolo_dir = 
                                          paste("results/starsolo_alignment/", i, "/", i, ".Solo.out/Gene/filtered/", sep = ""),
-                                       exp_tag = paste(i, "_pseudobulk_U", sep = ""))
+                                       exp_tag = paste(i, "_pseudobulk_U", sep = ""),
+                                       use.symbols = TRUE)
 
   assign(paste(sample_name, "seurat", sep="."), seurat_object, envir=.GlobalEnv)
   }
@@ -135,6 +166,7 @@ GTEX_1ICG6_5014_SM_GHS9D.seurat.qc <- stellarscope_cell_qc(GTEX_1ICG6_5014_SM_GH
 GTEX_1ICG6_5003_SM_GHS9A.seurat.qc <- stellarscope_cell_qc(GTEX_1ICG6_5003_SM_GHS9A.seurat)
 GTEX_1MCC2_5013_SM_HPJ3D.seurat.qc <- stellarscope_cell_qc(GTEX_1MCC2_5013_SM_HPJ3D.seurat)
 GTEX_1R9PN_5002_SM_HD2MC.seurat.qc <- stellarscope_cell_qc(GTEX_1R9PN_5002_SM_HD2MC.seurat)
+
 
 
 ############################# SAVE RDATA OBJECTS ###############################
