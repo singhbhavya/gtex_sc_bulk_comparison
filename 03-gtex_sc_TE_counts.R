@@ -88,6 +88,7 @@ retro.hg38.v1 <- retro.hg38.v1 %>%
 retro.annot <- retro.hg38.v1
 remove(retro.hg38.v1)
 row.names(retro.annot) <- retro.annot$locus
+row.names(retro.annot) <- gsub("_", "-", row.names(retro.annot))
 
 # Load gtf 
 
@@ -117,7 +118,6 @@ gene_table[duplicated(gene_table$gene_name), 'display'] <-
   paste(gene_table[duplicated(gene_table$gene_name), 'display'], 
         gene_table[duplicated(gene_table$gene_name), 'gene_id'], sep='|')
 
-remove(retro.hg38.v1)
 
 ################################# LOAD SEURAT ##################################
 
@@ -435,10 +435,18 @@ pseudobulk.cpm.seurat <- data.frame(sc.seurat.cpm.list)
 
 ################################# SUBSET TEs ###################################
 
-pseudobulk.rtx.counts.raw <- pseudobulk.counts.raw[rownames(retro.annot),]
-pseudobulk.rtx.counts.norm <- pseudobulk.counts.norm[rownames(retro.annot),]
-pseudobulk.rtx.cpm.raw <- as.data.frame(pseudobulk.cpm.raw)[rownames(retro.annot),]
-pseudobulk.rtx.cpm.seurat <- as.data.frame(pseudobulk.cpm.seurat)[rownames(retro.annot),]
+feats_in_sc <- as.data.frame(
+  GTEX_16BQI_5013_SM_H8SUW.seurat.qc$RNA@meta.features$id[
+  !grepl("^ENSG", 
+         GTEX_16BQI_5013_SM_H8SUW.seurat.qc$RNA@meta.features$id)])
+
+colnames(feats_in_sc) <- c("tes")
+feats_in_sc$tes <- gsub("_", "-", feats_in_sc$tes)
+
+pseudobulk.rtx.counts.raw <- pseudobulk.counts.raw[feats_in_sc$tes,]
+pseudobulk.rtx.counts.norm <- pseudobulk.counts.norm[feats_in_sc$tes,]
+pseudobulk.rtx.cpm.raw <- as.data.frame(pseudobulk.cpm.raw)[feats_in_sc$tes,]
+pseudobulk.rtx.cpm.seurat <- as.data.frame(pseudobulk.cpm.seurat)[feats_in_sc$tes,]
 
 
 ###################### PSEUDOBULK MATRICES THROUGH SEURAT ######################
@@ -483,7 +491,7 @@ names(pseudobulk.counts.aggregated.seurat) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX
                                       "GTEX_1R9PN_5002_SM_HD2MC")
 
 pseudobulk.rtx.counts.aggregated.seurat <- 
-  pseudobulk.counts.aggregated.seurat[row.names(retro.annot),]
+  pseudobulk.counts.aggregated.seurat[feats_in_sc$tes,]
 
 pseudobulk.rtx.cpm.aggregated.seurat <- cpm(pseudobulk.rtx.counts.aggregated.seurat)
 
