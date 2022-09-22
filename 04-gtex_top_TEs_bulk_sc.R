@@ -24,6 +24,20 @@ load("r_outputs/03-mean_raw_scTE_cpm_by_tissue_type.RData")
 row.names(samples) <- samples$sn_RNAseq
 samples$sn_RNAseq_names <- gsub("-", "_", samples$sn_RNAseq)
 
+################################# COLOR SETUP ##################################
+
+mypal = pal_npg("nrc", alpha = 0.7)(8)
+mycols <- c("#E64B35B2","#4DBBD5B2","#00A087B2","#3C5488B2",
+                   "#F39B7FB2","#8491B4B2","#91D1C2B2","#DC0000B2")
+
+tissues <- c("Prostate", "Heart", "Lung", "E_Muscularis",
+             "E_Mucosa" , "Sk_muscle", "Skin", "Breast")
+
+tissue_color<- data.frame(tissues, mycols)
+
+samples$color <- 
+  tissue_color$mycols[match(samples$tissue, tissue_color$tissues)]
+
 ######################## TOP TEs PER TISSUE TYPE (BULK) ########################
   
 top_tes_per_tissue <- function(i) {
@@ -39,7 +53,8 @@ top_tes_per_tissue <- function(i) {
             angle = 30, vjust = 1, hjust=1, size = 13)) +
     ylab("Average CPM") +
     ggtitle(names(bulk_list)[i]) + 
-    geom_bar(stat='identity') 
+    geom_bar(stat='identity', 
+             fill = tissue_color$mycols[tissues == names(bulk_list)[i]]) 
   
   }
   
@@ -70,7 +85,8 @@ top_tes_per_tissue_sc <- function(i) {
             angle = 30, vjust = 1, hjust=1, size = 13)) +
     ylab("Average CPM") +
     ggtitle(names(sc_list)[i]) + 
-    geom_bar(stat='identity') 
+    geom_bar(stat='identity', 
+             fill = tissue_color$mycols[tissues == names(sc_list)[i]]) 
   
 }
 
@@ -103,7 +119,8 @@ top_tes_per_sample <- function(i) {
             angle = 30, vjust = 1, hjust=1, size = 13)) +
     ylab("CPM") +
     ggtitle(i) + 
-    geom_bar(stat='identity') 
+    geom_bar(stat='identity',
+             fill=samples$color[samples$bulk_RNAseq == i]) 
 }
 
 cowplot::plot_grid(plotlist = lapply(samples$bulk_RNAseq, top_tes_per_sample), 
@@ -130,7 +147,8 @@ top_tes_per_sample_sc <- function(i) {
             angle = 30, vjust = 1, hjust=1, size = 13)) +
     ylab("CPM") +
     ggtitle(i) + 
-    geom_bar(stat='identity') 
+    geom_bar(stat='identity',
+             fill=samples$color[samples$sn_RNAseq_names == i]) 
 }
 
 cowplot::plot_grid(plotlist = lapply(samples$sn_RNAseq_names, top_tes_per_sample_sc), 
@@ -138,4 +156,3 @@ cowplot::plot_grid(plotlist = lapply(samples$sn_RNAseq_names, top_tes_per_sample
 
 ggsave("plots/top_tes_per_sample_sc.pdf", height=20, width=20)
 
-rbind()
