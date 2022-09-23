@@ -541,7 +541,8 @@ save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
 
 # Save count files
 save(pseudobulk.rtx.counts.raw, pseudobulk.rtx.counts.norm, 
-     pseudobulk.rtx.cpm.raw,
+     pseudobulk.rtx.cpm.raw, pseudobulk.counts.raw, pseudobulk.counts.norm,
+     pseudobulk.cpm.raw,
      file = "r_outputs/03-scgtex_seurat_counts.Rdata")
 
 # Save all ordered &  mean raw TE counts per tissue sample
