@@ -85,8 +85,13 @@ retro.hg38.v1 <- retro.hg38.v1 %>%
     te_class = factor(ifelse(is.na(l1base_id), 'LTR', 'LINE'), levels=c('LTR','LINE')),
   )
 
+# Remove the confounding LINE element (L1FLnI_Xq21.1db) that has a poly A tail
+# in the middle of it:
+
+retro.hg38.v1<-
+  retro.hg38.v1[!(retro.hg38.v1$locus=="L1FLnI_Xq21.1db"),]
+
 retro.annot <- retro.hg38.v1
-remove(retro.hg38.v1)
 row.names(retro.annot) <- retro.annot$locus
 row.names(retro.annot) <- gsub("_", "-", row.names(retro.annot))
 
@@ -131,13 +136,51 @@ load_all_seurat <- function(i) {
                                        starsolo_dir = 
                                          paste("results/starsolo_alignment/", i, "/", i, ".Solo.out/Gene/filtered/", sep = ""),
                                        exp_tag = paste(i, "_pseudobulk_U", sep = ""),
-                                       use.symbols = TRUE)
+                                       use.symbols = TRUE,
+                                       TE_metadata = retro.hg38.v1)
 
   assign(paste(sample_name, "seurat", sep="."), seurat_object, envir=.GlobalEnv)
   }
 
 # Apply function to all samples 
 invisible(lapply(samples$sn_RNAseq, load_all_seurat))
+
+# Add seurat obj names to sample sheet
+samples$seurat_obj_og <- paste(samples$sn_RNAseq_names, ".seurat", sep="")
+
+############################ REMOVE L1FLnI_Xq21.1db #############################
+
+remove_artifacts <- function(seurat.object) {
+  counts <- GetAssayData(seurat.object, assay = "RNA")
+  counts <- counts[-(which(rownames(counts) %in% c('L1FLnI-Xq21.1db'))),]
+  seurat.object <<- subset(seurat.object, features = rownames(counts))
+}
+
+GTEX_12BJ1_5007_SM_H8L6U.seurat <- remove_artifacts(GTEX_12BJ1_5007_SM_H8L6U.seurat)
+GTEX_13N11_5002_SM_H5JDV.seurat <- remove_artifacts(GTEX_13N11_5002_SM_H5JDV.seurat)
+GTEX_13N11_5030_SM_H5JDW.seurat <- remove_artifacts(GTEX_13N11_5030_SM_H5JDW.seurat)
+GTEX_144GM_5010_SM_HD2M8.seurat <- remove_artifacts(GTEX_144GM_5010_SM_HD2M8.seurat)
+GTEX_145ME_5005_SM_H8L6T.seurat <- remove_artifacts(GTEX_145ME_5005_SM_H8L6T.seurat)
+GTEX_145ME_5018_SM_G8XQB.seurat <- remove_artifacts(GTEX_145ME_5018_SM_G8XQB.seurat)
+GTEX_15CHR_5005_SM_H5JDT.seurat <- remove_artifacts(GTEX_15CHR_5005_SM_H5JDT.seurat)
+GTEX_15CHR_5014_SM_H5JDU.seurat <- remove_artifacts(GTEX_15CHR_5014_SM_H5JDU.seurat)
+GTEX_15EOM_5003_SM_G64IH.seurat <- remove_artifacts(GTEX_15EOM_5003_SM_G64IH.seurat)
+GTEX_15RIE_5015_SM_H8L6X.seurat <- remove_artifacts(GTEX_15RIE_5015_SM_H8L6X.seurat)
+GTEX_15RIE_5021_SM_H8L6Y.seurat <- remove_artifacts(GTEX_15RIE_5021_SM_H8L6Y.seurat)
+GTEX_15SB6_5008_SM_H8L72.seurat <- remove_artifacts(GTEX_15SB6_5008_SM_H8L72.seurat)
+GTEX_16BQI_5013_SM_H8SUW.seurat <- remove_artifacts(GTEX_16BQI_5013_SM_H8SUW.seurat)
+GTEX_1CAMR_5015_SM_HPJ3B.seurat <- remove_artifacts(GTEX_1CAMR_5015_SM_HPJ3B.seurat)
+GTEX_1CAMS_5015_SM_HPJ3C.seurat <- remove_artifacts(GTEX_1CAMS_5015_SM_HPJ3C.seurat)
+GTEX_1HSMQ_5021_SM_HD2MA.seurat <- remove_artifacts(GTEX_1HSMQ_5021_SM_HD2MA.seurat)
+GTEX_1HSMQ_5005_SM_GKSJF.seurat <- remove_artifacts(GTEX_1HSMQ_5005_SM_GKSJF.seurat)
+GTEX_1HSMQ_5011_SM_GKSJH.seurat <- remove_artifacts(GTEX_1HSMQ_5011_SM_GKSJH.seurat)
+GTEX_1HSMQ_5014_SM_GKSJI.seurat <- remove_artifacts(GTEX_1HSMQ_5014_SM_GKSJI.seurat)
+GTEX_1HSMQ_5007_SM_GKSJG.seurat <- remove_artifacts(GTEX_1HSMQ_5007_SM_GKSJG.seurat)
+GTEX_1I1GU_5006_SM_G8XQC.seurat <- remove_artifacts(GTEX_1I1GU_5006_SM_G8XQC.seurat)
+GTEX_1ICG6_5014_SM_GHS9D.seurat <- remove_artifacts(GTEX_1ICG6_5014_SM_GHS9D.seurat)
+GTEX_1ICG6_5003_SM_GHS9A.seurat <- remove_artifacts(GTEX_1ICG6_5003_SM_GHS9A.seurat)
+GTEX_1MCC2_5013_SM_HPJ3D.seurat <- remove_artifacts(GTEX_1MCC2_5013_SM_HPJ3D.seurat)
+GTEX_1R9PN_5002_SM_HD2MC.seurat <- remove_artifacts(GTEX_1R9PN_5002_SM_HD2MC.seurat)
 
 ############################### STELLARSCOPE QC ################################
 
@@ -252,7 +295,7 @@ names(sc.counts.list) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX_13N11_5002_SM_H5JDV"
                             "GTEX_1R9PN_5002_SM_HD2MC")
 
 pseudobulk.counts.raw <- data.frame(sc.counts.list) 
-pseudobulk.cpm.raw <- cpm(pseudobulk.counts.raw)
+pseudobulk.cpm.raw <- edgeR::cpm(pseudobulk.counts.raw)
 
 ########################## GET NORMALIZED TE COUNTS ############################
 
@@ -435,9 +478,10 @@ pseudobulk.cpm.seurat <- data.frame(sc.seurat.cpm.list)
 
 ################################# SUBSET TEs ###################################
 
+# Remove all genes, and also remove the weird LINE element L1FLnI_Xq21.1db
 feats_in_sc <- as.data.frame(
   GTEX_16BQI_5013_SM_H8SUW.seurat.qc$RNA@meta.features$id[
-  !grepl("^ENSG", 
+  !grepl("^ENSG|L1FLnI_Xq21.1db", 
          GTEX_16BQI_5013_SM_H8SUW.seurat.qc$RNA@meta.features$id)])
 
 colnames(feats_in_sc) <- c("tes")
@@ -493,7 +537,7 @@ names(pseudobulk.counts.aggregated.seurat) <- c("GTEX_12BJ1_5007_SM_H8L6U","GTEX
 pseudobulk.rtx.counts.aggregated.seurat <- 
   pseudobulk.counts.aggregated.seurat[feats_in_sc$tes,]
 
-pseudobulk.rtx.cpm.aggregated.seurat <- cpm(pseudobulk.rtx.counts.aggregated.seurat)
+pseudobulk.rtx.cpm.aggregated.seurat <- edgeR::cpm(pseudobulk.rtx.counts.aggregated.seurat)
 
 # Error in cpm.default(pseudobulk.rtx.counts.aggregated.seurat) : 
 #  library sizes should be finite and non-negative

@@ -91,6 +91,12 @@ retro.hg38.v1 <- retro.hg38.v1 %>%
 # Annotation directory for scopetools
 ddir <- system.file("extdata", package="scopetools")
 
+# Remove the confounding LINE element (L1FLnI_Xq21.1db) that has a poly A tail
+# in the middle of it:
+
+retro.hg38.v1<-
+  retro.hg38.v1[!(retro.hg38.v1$locus=="L1FLnI_Xq21.1db"),]
+
 ################################# READ TELESCOPE #################################
 # Telescope files to read in 
 # Provide all_locs to include all annotated loci (preferred)
