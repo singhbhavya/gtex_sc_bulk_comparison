@@ -24,10 +24,15 @@ load("r_outputs/03-scgtex_seurat_counts.Rdata")
 
 ################################## DATA SETUP ##################################
 
+# Fix sample row names
 row.names(samples) <- samples$sn_RNAseq
 samples$sn_RNAseq_names <- gsub("-", "_", samples$sn_RNAseq)
 
-# Keep only genes 
+# Fix dashes
+row.names(pseudobulk.rtx.counts.raw) <- 
+  gsub("-", "_", row.names(pseudobulk.rtx.counts.raw))
+row.names(pseudobulk.rtx.cpm.raw) <- 
+  gsub("-", "_", row.names(pseudobulk.rtx.cpm.raw))
 
 ################################# COLOR SETUP ##################################
 
@@ -42,6 +47,68 @@ tissue_color<- data.frame(tissues, mycols)
 
 samples$color <- 
   tissue_color$mycols[match(samples$tissue, tissue_color$tissues)]
+
+############################### METADATA SETUP ##################################
+
+# load annotation
+retro.hg38.v1 <- 
+  readr::read_tsv(
+    "https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/retro.hg38.v1/genes.tsv.gz", 
+    na=c('.'))
+retro.hg38.v1 <- retro.hg38.v1 %>%
+  tidyr::separate(locus, c("family"), sep='_', remove=F, extra='drop') %>%
+  dplyr::mutate(
+    te_class = factor(ifelse(is.na(l1base_id), 'LTR', 'LINE'), levels=c('LTR','LINE')),
+  )
+
+# Remove the confounding LINE element (L1FLnI_Xq21.1db) that has a poly A tail
+# in the middle of it:
+
+retro.hg38.v1<-
+  retro.hg38.v1[!(retro.hg38.v1$locus=="L1FLnI_Xq21.1db"),]
+
+# Make sure that both counts.rtx and retro.annot have the same loci
+retro.annot <- retro.hg38.v1
+remove(retro.hg38.v1)
+row.names(retro.annot) <- retro.annot$locus
+
+# Load gtf 
+
+gtf <- rtracklayer::import("refs//gencode.v38.annotation.gtf")
+gtf_df=as.data.frame(gtf)
+gtf_df <-
+  gtf_df[,
+         c("gene_id", "seqnames", "start", "end", "strand", "width", "gene_name",
+           "gene_type")]
+
+
+colnames(gtf_df) <- c("gene_id", "chrom", "start", "end", "strand", "length",
+                      "gene_name", "gene_type")
+
+gene_table <- 
+  gtf_df[!duplicated(gtf_df[,c(1,7)]), ] %>% 
+  dplyr::select('gene_id', 'gene_name', 'gene_type')
+
+rownames(gene_table) <- gene_table$gene_id
+
+gene_table$display <- gene_table$gene_name
+gene_table[duplicated(gene_table$gene_name), 'display'] <- 
+  paste(gene_table[duplicated(gene_table$gene_name), 'display'], 
+        gene_table[duplicated(gene_table$gene_name), 'gene_id'], sep='|')
+
+
+############################## GENE DATA SETUP #################################
+
+# Change gene IDs to gene names
+rownames(counts.cpm) <- gene_table[rownames(counts.cpm), 'display']
+
+# Keep only the genes, remove TEs
+bulk_gene_counts.cpm <- counts.cpm[gene_table$display,]
+
+# Find all common genes between sc and bulk 
+common <- intersect(rownames(bulk_gene_counts.cpm), rownames(pseudobulk.cpm.raw))  
+bulk_genes_cpm <- counts.cpm[common,] 
+pseudobulk_genes_cpm <- pseudobulk.cpm.raw[common,]
 
 ############################# SC / BULK CORRELATION ############################
 ################################ SAMPLE LEVEL TE ###############################
@@ -59,20 +126,22 @@ bulk_sc_cor <- function(i) {
   sc_tes <- as.data.frame(pseudobulk.rtx.cpm.raw[,sc_samp, drop=FALSE])
   colnames(sc_tes) <- c(sc_samp)
   
-  samp_tes <- cbind(bulk_tes, sc_tes)
+  samp_tes <- merge(bulk_tes, sc_tes, 
+                    by.x="row.names", by.y="row.names",
+                    all.y=TRUE)
   
   samp_te_df <- samp_tes
   samp_te_df$bulk <- bulk_samp
   samp_te_df$sc <- sc_samp
   samp_te_df$tissue <- samples$tissue[i]
   samp_te_df$participant <- samples$participant_id[i]
-  colnames(samp_te_df) <- c("bulk_counts", "sc_counts", "bulk", "sc", "tissue",
+  colnames(samp_te_df) <- c("TE", "bulk_counts", "sc_counts", "bulk", "sc", "tissue",
                             "participant")
   row.names(samp_te_df) <- NULL
   
   all_bulk_sc <<- rbind(all_bulk_sc, samp_te_df)
   
-  cor.test(samp_tes[,1], samp_tes[,2], 
+  cor.test(samp_tes[,2], samp_tes[,3], 
            method="spearman", exact = FALSE)
   
   ggscatter(samp_tes, x = bulk_samp, y = sc_samp, 
@@ -88,7 +157,7 @@ bulk_sc_cor <- function(i) {
 cowplot::plot_grid(plotlist = lapply(seq_along(samples$bulk_RNAseq), bulk_sc_cor), 
                    ncol=5)
 
-ggsave("plots/sample_level_bulk_sc_corr.pdf", height=20, width=20)
+ggsave("plots/sample_level_bulk_sc_te_corr.pdf", height=20, width=20)
 
 ########################## SC / BULK CORRELATION ALL TE #########################
 
@@ -101,7 +170,7 @@ ggscatter(all_bulk_sc, x = "bulk_counts", y = "sc_counts",
   font("xlab", size=10) +
   font("ylab", size=10)
 
-ggsave("plots/all_bulk_sc_corr.pdf", height=4, width=4)
+ggsave("plots/all_bulk_sc_te_corr.pdf", height=4, width=4)
 
 ############################# SC / BULK CORRELATION ############################
 ############################### SAMPLE LEVEL GENE ##############################
@@ -113,29 +182,30 @@ bulk_sc_cor_gene <- function(i) {
   bulk_samp <- samples$bulk_RNAseq[i]
   sc_samp <- samples$sn_RNAseq_names[i]
   
-  bulk_tes <- as.data.frame(counts.cpm.rtx[,bulk_samp])
-  colnames(bulk_tes) <- c(bulk_samp)
+  bulk_genes <- as.data.frame(bulk_genes_cpm[,bulk_samp])
+  colnames(bulk_genes) <- c(bulk_samp)
   
-  sc_tes <- as.data.frame(pseudobulk.rtx.cpm.raw[,sc_samp, drop=FALSE])
-  colnames(sc_tes) <- c(sc_samp)
+  sc_genes <- as.data.frame(pseudobulk_genes_cpm[,sc_samp, drop=FALSE])
+  colnames(sc_genes) <- c(sc_samp)
   
-  samp_tes <- cbind(bulk_tes, sc_tes)
+  samp_genes <- merge(bulk_genes, sc_genes, 
+                      by.x="row.names", by.y="row.names")
   
-  samp_te_df <- samp_tes
-  samp_te_df$bulk <- bulk_samp
-  samp_te_df$sc <- sc_samp
-  samp_te_df$tissue <- samples$tissue[i]
-  samp_te_df$participant <- samples$participant_id[i]
-  colnames(samp_te_df) <- c("bulk_counts", "sc_counts", "bulk", "sc", "tissue",
+  samp_genes_df <- samp_genes
+  samp_genes_df$bulk <- bulk_samp
+  samp_genes_df$sc <- sc_samp
+  samp_genes_df$tissue <- samples$tissue[i]
+  samp_genes_df$participant <- samples$participant_id[i]
+  colnames(samp_genes_df) <- c("gene", "bulk_counts", "sc_counts", "bulk", "sc", "tissue",
                             "participant")
-  row.names(samp_te_df) <- NULL
+  row.names(samp_genes_df) <- NULL
   
-  all_bulk_sc <<- rbind(all_bulk_sc, samp_te_df)
+  all_bulk_sc_gene <<- rbind(all_bulk_sc_gene, samp_genes_df)
   
-  cor.test(samp_tes[,1], samp_tes[,2], 
+  cor.test(samp_genes[,2], samp_genes[,3], 
            method="spearman", exact = FALSE)
   
-  ggscatter(samp_tes, x = bulk_samp, y = sc_samp, 
+  ggscatter(samp_genes, x = bulk_samp, y = sc_samp, 
             add = "reg.line", conf.int = TRUE, 
             cor.coef = TRUE, cor.method = "spearman",
             exact=FALSE,
@@ -145,7 +215,20 @@ bulk_sc_cor_gene <- function(i) {
   
 }
 
-cowplot::plot_grid(plotlist = lapply(seq_along(samples$bulk_RNAseq), bulk_sc_cor), 
+cowplot::plot_grid(plotlist = lapply(seq_along(samples$bulk_RNAseq), bulk_sc_cor_gene), 
                    ncol=5)
 
-ggsave("plots/sample_level_bulk_sc_corr.pdf", height=20, width=20)
+ggsave("plots/sample_level_bulk_sc_gene_corr.pdf", height=20, width=20)
+
+########################## SC / BULK CORRELATION ALL GENES #########################
+
+ggscatter(all_bulk_sc_gene, x = "bulk_counts", y = "sc_counts", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "spearman",
+          exact=FALSE,
+          xlab = "Bulk Gene CPM", 
+          ylab = "Single Cell Gene CPM") +
+  font("xlab", size=10) +
+  font("ylab", size=10)
+
+ggsave("plots/all_bulk_sc_gene_corr.pdf", height=4, width=4)
