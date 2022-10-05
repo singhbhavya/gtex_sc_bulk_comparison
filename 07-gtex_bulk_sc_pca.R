@@ -172,7 +172,7 @@ biplot(pca.obj,
        gridlines.minor = FALSE,
        legendPosition = "right")
 
-ggsave("plots/biplot_tissue.pdf", height=5, width=7)
+ggsave("plots/biplot_tissue_pc3_pc4.pdf", height=5, width=7)
 
 
 biplot(pca.obj, 
@@ -193,4 +193,4 @@ biplot(pca.obj,
        gridlines.minor = FALSE,
        legendPosition = "right")
 
-ggsave("plots/biplot_seqtype.pdf", height=5, width=7)
+ggsave("plots/biplot_seqtype_pc3_pc4.pdf", height=5, width=7)
