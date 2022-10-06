@@ -645,7 +645,9 @@ save(pseudobulk.rtx.cpm.raw, pseudobulk.herv.cpm.raw, pseudobulk.l1.cpm.raw,
      Heart.sc.cpm, Lung.sc.cpm, Prostate.sc.cpm, Sk_muscle.sc.cpm, Skin.sc.cpm,
      Breast.sc.herv.cpm, E_Mucosa.sc.herv.cpm, E_Muscularis.sc.herv.cpm,
      Heart.sc.herv.cpm, Lung.sc.herv.cpm, Prostate.sc.herv.cpm, Sk_muscle.sc.herv.cpm,
-     Skin.sc.herv.cpm,
+     Skin.sc.herv.cpm, Breast.sc.l1.cpm, E_Mucosa.sc.l1.cpm, E_Muscularis.sc.l1.cpm,
+     Heart.sc.l1.cpm, Lung.sc.l1.cpm, Prostate.sc.l1.cpm, Sk_muscle.sc.l1.cpm,
+     Skin.sc.l1.cpm,
      file="r_outputs/03-mean_raw_scTE_cpm_by_tissue_type.RData")
 
 
