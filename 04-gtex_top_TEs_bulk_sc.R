@@ -69,6 +69,32 @@ cowplot::plot_grid(plotlist = lapply(seq_along(bulk_list), top_tes_per_tissue),
 ggsave("plots/top_tes_per_tissue_bulk.pdf", height=10, width=17)
 remove(bulk_list)
 
+####################### TOP HERVs PER TISSUE TYPE (BULK) #######################
+
+bulk_list <- list(Breast = Breast.herv.cpm, E_Mucosa = E_Mucosa.herv.cpm, 
+                  E_Muscularis = E_Muscularis.herv.cpm, Heart = Heart.herv.cpm,
+                  Lung = Lung.herv.cpm, Prostate = Prostate.herv.cpm, 
+                  Sk_muscle = Sk_muscle.herv.cpm, Skin = Skin.herv.cpm)
+
+cowplot::plot_grid(plotlist = lapply(seq_along(bulk_list), top_tes_per_tissue), 
+                   ncol=4)
+
+ggsave("plots/top_HERVs_per_tissue_bulk.pdf", height=10, width=17)
+remove(bulk_list)
+
+####################### TOP LINEs PER TISSUE TYPE (BULK) #######################
+
+bulk_list <- list(Breast = Breast.l1.cpm, E_Mucosa = E_Mucosa.l1.cpm, 
+                  E_Muscularis = E_Muscularis.l1.cpm, Heart = Heart.l1.cpm,
+                  Lung = Lung.l1.cpm, Prostate = Prostate.l1.cpm, 
+                  Sk_muscle = Sk_muscle.l1.cpm, Skin = Skin.l1.cpm)
+
+cowplot::plot_grid(plotlist = lapply(seq_along(bulk_list), top_tes_per_tissue), 
+                   ncol=4)
+
+ggsave("plots/top_LINEs_per_tissue_bulk.pdf", height=10, width=17)
+remove(bulk_list)
+
 
 ######################### TOP TEs PER TISSUE TYPE (SC) #########################
 
@@ -101,6 +127,20 @@ cowplot::plot_grid(plotlist = lapply(seq_along(sc_list), top_tes_per_tissue_sc),
 ggsave("plots/top_tes_per_tissue_sc.pdf", height=10, width=17)
 remove(sc_list)
 
+######################## TOP HERVs PER TISSUE TYPE (SC) ########################
+
+sc_list <- list(Breast = Breast.sc.herv.cpm, E_Mucosa = E_Mucosa.sc.herv.cpm, 
+                E_Muscularis = E_Muscularis.sc.herv.cpm, Heart = Heart.sc.herv.cpm,
+                Lung = Lung.sc.herv.cpm, Prostate = Prostate.sc.herv.cpm, 
+                Sk_muscle = Sk_muscle.sc.herv.cpm, Skin = Skin.sc.herv.cpm)
+
+cowplot::plot_grid(plotlist = lapply(seq_along(sc_list), top_tes_per_tissue_sc), 
+                   ncol=4)
+
+ggsave("plots/top_HERVs_per_tissue_sc.pdf", height=10, width=17)
+remove(sc_list)
+
+
 ########################### TOP TEs PER SAMPLE (BULK) ##########################
 
 top_tes_per_sample <- function(i) {
@@ -127,6 +167,34 @@ cowplot::plot_grid(plotlist = lapply(samples$bulk_RNAseq, top_tes_per_sample),
                    ncol=5)
 
 ggsave("plots/top_tes_per_sample_bulk.pdf", height=20, width=20)
+
+########################## TOP HERVs PER SAMPLE (BULK) #########################
+
+top_hervs_per_sample <- function(i) {
+  
+  sample_counts <- as.data.frame(counts.cpm.herv[,i])
+  colnames(sample_counts) <- "counts"
+  sample_counts <- tibble::rownames_to_column(sample_counts, "TEs")
+  sample_counts <- sample_counts[order(sample_counts$counts, decreasing = TRUE),] 
+  
+  ggplot(sample_counts[1:10,], 
+         aes(x= reorder(TEs, -counts), 
+             y=counts)) +
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(i) + 
+    geom_bar(stat='identity',
+             fill=samples$color[samples$bulk_RNAseq == i]) 
+}
+
+cowplot::plot_grid(plotlist = lapply(samples$bulk_RNAseq, top_hervs_per_sample), 
+                   ncol=5)
+
+ggsave("plots/top_HERVs_per_sample_bulk.pdf", height=20, width=20)
+
 
 ############################ TOP TEs PER SAMPLE (SC) ###########################
 
@@ -155,4 +223,32 @@ cowplot::plot_grid(plotlist = lapply(samples$sn_RNAseq_names, top_tes_per_sample
                    ncol=5)
 
 ggsave("plots/top_tes_per_sample_sc.pdf", height=20, width=20)
+
+########################### TOP HERVs PER SAMPLE (SC) ##########################
+
+top_hervs_per_sample_sc <- function(i) {
+  
+  sample_counts <- as.data.frame(pseudobulk.herv.cpm.raw[,i, 
+                                                        drop=FALSE])
+  colnames(sample_counts) <- "counts"
+  sample_counts <- tibble::rownames_to_column(sample_counts, "TEs")
+  sample_counts <- sample_counts[order(sample_counts$counts, decreasing = TRUE),] 
+  
+  ggplot(sample_counts[1:10,], 
+         aes(x= reorder(TEs, -counts), 
+             y=counts)) +
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(i) + 
+    geom_bar(stat='identity',
+             fill=samples$color[samples$sn_RNAseq_names == i]) 
+}
+
+cowplot::plot_grid(plotlist = lapply(samples$sn_RNAseq_names, top_hervs_per_sample_sc), 
+                   ncol=5)
+
+ggsave("plots/top_HERVs_per_sample_sc.pdf", height=20, width=20)
 

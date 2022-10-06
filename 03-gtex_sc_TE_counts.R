@@ -487,11 +487,31 @@ feats_in_sc <- as.data.frame(
 colnames(feats_in_sc) <- c("tes")
 feats_in_sc$tes <- gsub("_", "-", feats_in_sc$tes)
 
+# Make another df of only HERVs and LINEs
+meta.features <- as.data.frame(
+  GTEX_16BQI_5013_SM_H8SUW.seurat.qc$RNA@meta.features)
+
+meta.features$id <- gsub("_", "-", meta.features$id)
+
+# Subset RTX
 pseudobulk.rtx.counts.raw <- pseudobulk.counts.raw[feats_in_sc$tes,]
 pseudobulk.rtx.counts.norm <- pseudobulk.counts.norm[feats_in_sc$tes,]
 pseudobulk.rtx.cpm.raw <- as.data.frame(pseudobulk.cpm.raw)[feats_in_sc$tes,]
 pseudobulk.rtx.cpm.seurat <- as.data.frame(pseudobulk.cpm.seurat)[feats_in_sc$tes,]
 
+# Subset HERVs only
+
+pseudobulk.herv.counts.raw <- pseudobulk.counts.raw[meta.features$id[meta.features$te_class=="LTR"],]
+pseudobulk.herv.counts.norm <- pseudobulk.counts.norm[meta.features$id[meta.features$te_class=="LTR"],]
+pseudobulk.herv.cpm.raw <- as.data.frame(pseudobulk.cpm.raw)[meta.features$id[meta.features$te_class=="LTR"],]
+pseudobulk.herv.cpm.seurat <- as.data.frame(pseudobulk.cpm.seurat)[meta.features$id[meta.features$te_class=="LTR"],]
+
+# Subset LINEs only
+
+pseudobulk.l1.counts.raw <- pseudobulk.counts.raw[meta.features$id[meta.features$te_class=="LINE"],]
+pseudobulk.l1.counts.norm <- pseudobulk.counts.norm[meta.features$id[meta.features$te_class=="LINE"],]
+pseudobulk.l1.cpm.raw <- as.data.frame(pseudobulk.cpm.raw)[meta.features$id[meta.features$te_class=="LINE"],]
+pseudobulk.l1.cpm.seurat <- as.data.frame(pseudobulk.cpm.seurat)[meta.features$id[meta.features$te_class=="LINE"],]
 
 ###################### PSEUDOBULK MATRICES THROUGH SEURAT ######################
 
@@ -555,10 +575,30 @@ get_tissue_samples <- function(i) {
   df_raw <- df_raw[order(-df_raw$mean_counts), , drop = FALSE]
   assign(paste(i, "sc", "raw", sep="."), df_raw, envir=.GlobalEnv)
   
+  df_raw_herv <- as.data.frame(rowMeans(pseudobulk.herv.counts.raw[, tissue_sample_names])) 
+  colnames(df_raw_herv) <- c("mean_counts")
+  df_raw_herv <- df_raw_herv[order(-df_raw_herv$mean_counts), , drop = FALSE]
+  assign(paste(i, "sc", "herv", "raw", sep="."), df_raw_herv, envir=.GlobalEnv)
+  
+  df_raw_l1 <- as.data.frame(rowMeans(pseudobulk.l1.counts.raw[, tissue_sample_names])) 
+  colnames(df_raw_l1) <- c("mean_counts")
+  df_raw_l1 <- df_raw_l1[order(-df_raw_l1$mean_counts), , drop = FALSE]
+  assign(paste(i, "sc", "l1", "raw", sep="."), df_raw_l1, envir=.GlobalEnv)
+  
   df_cpm <- as.data.frame(rowMeans(pseudobulk.rtx.cpm.raw[, tissue_sample_names])) 
   colnames(df_cpm) <- c("mean_counts")
   df_cpm <- df_cpm[order(-df_cpm$mean_counts), , drop = FALSE]
   assign(paste(i, "sc", "cpm", sep="."), df_cpm, envir=.GlobalEnv)
+  
+  df_cpm_herv <- as.data.frame(rowMeans(pseudobulk.herv.cpm.raw[, tissue_sample_names])) 
+  colnames(df_cpm_herv) <- c("mean_counts")
+  df_cpm_herv <- df_cpm_herv[order(-df_cpm_herv$mean_counts), , drop = FALSE]
+  assign(paste(i, "sc", "herv", "cpm", sep="."), df_cpm_herv, envir=.GlobalEnv)
+  
+  df_cpm_l1 <- as.data.frame(rowMeans(pseudobulk.l1.cpm.raw[, tissue_sample_names])) 
+  colnames(df_cpm_l1) <- c("mean_counts")
+  df_cpm_l1 <- df_cpm_l1[order(-df_cpm_l1$mean_counts), , drop = FALSE]
+  assign(paste(i, "sc", "l1", "cpm", sep="."), df_cpm_l1, envir=.GlobalEnv)
   
   remove(df_raw, df_cpm, tissue_sample_names)
 }
@@ -586,16 +626,26 @@ save(GTEX_12BJ1_5007_SM_H8L6U.seurat.norm,GTEX_13N11_5002_SM_H5JDV.seurat.norm,
 # Save count files
 save(pseudobulk.rtx.counts.raw, pseudobulk.rtx.counts.norm, 
      pseudobulk.rtx.cpm.raw, pseudobulk.counts.raw, pseudobulk.counts.norm,
-     pseudobulk.cpm.raw,
+     pseudobulk.cpm.raw, pseudobulk.herv.counts.raw, pseudobulk.herv.cpm.raw,
+     pseudobulk.l1.counts.raw, pseudobulk.l1.cpm.raw,
      file = "r_outputs/03-scgtex_seurat_counts.Rdata")
 
 # Save all ordered &  mean raw TE counts per tissue sample
-save(pseudobulk.rtx.counts.raw, Breast.sc.raw, E_Mucosa.sc.raw, E_Muscularis.sc.raw, 
+save(pseudobulk.rtx.counts.raw, pseudobulk.herv.counts.raw, pseudobulk.l1.counts.raw,
+     Breast.sc.raw, E_Mucosa.sc.raw, E_Muscularis.sc.raw, 
      Heart.sc.raw, Lung.sc.raw, Prostate.sc.raw, Sk_muscle.sc.raw, Skin.sc.raw,
+     Breast.sc.herv.raw, E_Mucosa.sc.herv.raw, E_Muscularis.sc.herv.raw, 
+     Heart.sc.herv.raw, Lung.sc.herv.raw, Prostate.sc.herv.raw, Sk_muscle.sc.herv.raw,
+     Skin.sc.herv.raw,
      file="r_outputs/03-mean_raw_scTE_counts_by_tissue_type.RData")
 
 # Save all ordered &  mean raw TE counts per tissue sample
-save(pseudobulk.rtx.cpm.raw, Breast.sc.cpm, E_Mucosa.sc.cpm, E_Muscularis.sc.cpm, 
+save(pseudobulk.rtx.cpm.raw, pseudobulk.herv.cpm.raw, pseudobulk.l1.cpm.raw,
+     Breast.sc.cpm, E_Mucosa.sc.cpm, E_Muscularis.sc.cpm, 
      Heart.sc.cpm, Lung.sc.cpm, Prostate.sc.cpm, Sk_muscle.sc.cpm, Skin.sc.cpm,
+     Breast.sc.herv.cpm, E_Mucosa.sc.herv.cpm, E_Muscularis.sc.herv.cpm,
+     Heart.sc.herv.cpm, Lung.sc.herv.cpm, Prostate.sc.herv.cpm, Sk_muscle.sc.herv.cpm,
+     Skin.sc.herv.cpm,
      file="r_outputs/03-mean_raw_scTE_cpm_by_tissue_type.RData")
+
 
