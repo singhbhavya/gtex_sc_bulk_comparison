@@ -171,9 +171,14 @@ stopifnot(all(names(counts) == row.names(samples)))
 # Remove unused vairbles
 remove(reorder_idx_counts.tx, reorder_idx_counts.rtx)
 
+################################ REMOVE LINEs ##################################
+
+herv.annot <- retro.annot[retro.annot$te_class == "LTR",]
+counts.herv <-counts.rtx[herv.annot$locus,]
+
 ##################################### CPM ######################################
 
-counts.cpm <- cpm(counts)
+counts.cpm <- edgeR::cpm(counts)
 
 #################################### DESeq2 ####################################
 
@@ -192,11 +197,29 @@ boxplot(counts(dds), main = "Raw Counts", cex = 0.6)
 ## Get average expression of the normalized data of every feature per tissue ##
 ###############################################################################
 
+# Subset raw counts to only include HERVs
+counts.herv <- counts[herv.annot$locus,]
+
+# Subset raw counts to only include L1s
+counts.l1 <- counts[retro.annot$locus[retro.annot$te_class=="LINE"],]
+
 # Subset normalized counts to only include TEs
 counts.norm.rtx <- counts.norm[row.names(retro.annot),]
 
-# Subset normalized counts to only include TEs
+# Subset normalized counts to only include HERVs
+counts.norm.herv <- counts.norm[herv.annot$locus,]
+
+# Subset normalized counts to only include L1s
+counts.norm.l1 <- counts.norm[retro.annot$locus[retro.annot$te_class=="LINE"],]
+
+# Subset cpm to only include TEs
 counts.cpm.rtx <- counts.cpm[row.names(retro.annot),]
+
+# Subset cpm to only include HERVs
+counts.cpm.herv <- counts.cpm[herv.annot$locus,]
+
+# Subset cpm to only include L1s
+counts.cpm.l1 <- counts.cpm[retro.annot$locus[retro.annot$te_class=="LINE"],]
 
 # Function to create df of normalized count for a given tissue type
 get_tissue_samples <- function(i) {
@@ -217,6 +240,16 @@ get_tissue_samples <- function(i) {
   df_cpm <- df_cpm[order(-df_cpm$mean_counts), , drop = FALSE]
   assign(paste(i, "cpm", sep="."), df_cpm, envir=.GlobalEnv)
   
+  df_cpm_l1 <- as.data.frame(rowMeans(counts.cpm.l1[, tissue_sample_names])) 
+  colnames(df_cpm_l1) <- c("mean_counts")
+  df_cpm_l1 <- df_cpm_l1[order(-df_cpm_l1$mean_counts), , drop = FALSE]
+  assign(paste(i, "l1", "cpm", sep="."), df_cpm_l1, envir=.GlobalEnv)
+  
+  df_cpm_herv <- as.data.frame(rowMeans(counts.cpm.herv[, tissue_sample_names])) 
+  colnames(df_cpm_herv) <- c("mean_counts")
+  df_cpm_herv <- df_cpm_herv[order(-df_cpm_herv$mean_counts), , drop = FALSE]
+  assign(paste(i, "herv", "cpm", sep="."), df_cpm_herv, envir=.GlobalEnv)
+  
   remove(df, df_raw, df_cpm, tissue_sample_names)
 }
 
@@ -234,12 +267,17 @@ save(counts.rtx, Breast.raw, E_Mucosa.raw, E_Muscularis.raw, Heart.raw,
      file="r_outputs/01-mean_raw_TE_counts_by_tissue_type.RData")
 
 # Save all ordered &  mean TE CPMs per tissue sample
-save(counts.cpm.rtx, Breast.cpm, E_Mucosa.cpm, E_Muscularis.cpm, Heart.cpm, 
+save(counts.cpm.rtx, counts.cpm.herv, counts.cpm.l1,
+     Breast.cpm, E_Mucosa.cpm, E_Muscularis.cpm, Heart.cpm, 
      Lung.cpm, Prostate.cpm, Sk_muscle.cpm, Skin.cpm,
+     Breast.herv.cpm, E_Mucosa.herv.cpm, E_Muscularis.herv.cpm, Heart.herv.cpm,
+     Lung.herv.cpm, Prostate.herv.cpm, Sk_muscle.herv.cpm, Skin.herv.cpm,
+     Breast.l1.cpm, E_Mucosa.l1.cpm, E_Muscularis.l1.cpm, Heart.l1.cpm,
+     Lung.l1.cpm, Prostate.l1.cpm, Sk_muscle.l1.cpm, Skin.l1.cpm,
      file="r_outputs/01-mean_cpm_by_tissue_type.RData")
 
-save(counts, counts.rtx, counts.tx, counts.norm, counts.norm.rtx, 
-     counts.cpm, counts.cpm.rtx, samples, 
+save(counts, counts.rtx, counts.tx, counts.l1, counts.herv,
+     counts.cpm, counts.cpm.rtx, counts.cpm.herv, counts.cpm.l1, samples, 
      file="r_outputs/01-counts.Rdata")
 
 remove(Breast.norm, E_Mucosa.norm, E_Muscularis.norm, Heart.norm, 
@@ -248,3 +286,5 @@ remove(Breast.norm, E_Mucosa.norm, E_Muscularis.norm, Heart.norm,
        Lung.raw, Prostate.raw, Sk_muscle.raw, Skin.raw,
        Breast.cpm, E_Mucosa.cpm, E_Muscularis.cpm, Heart.cpm, 
        Lung.cpm, Prostate.cpm, Sk_muscle.cpm, Skin.cpm)
+
+save(retro.annot, herv.annot, file="r_outputs/01-annot.Rdata")
