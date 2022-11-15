@@ -167,7 +167,7 @@ bulk_sc_cor <- function(i) {
            method="spearman", exact = FALSE)
   
   ggscatter(samp_tes, x = bulk_samp, y = sc_samp, 
-            add = "reg.line", conf.int = TRUE, 
+            add = "reg.line", conf.int = TRUE,
             cor.coef = TRUE, cor.method = "spearman",
             exact=FALSE,
             color=samples$color[samples$bulk_RNAseq == bulk_samp],
