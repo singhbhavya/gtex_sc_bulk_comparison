@@ -79,6 +79,23 @@ dds <- DESeq2::DESeqDataSetFromMatrix(countData = combined_counts,
 dds <- DESeq2::DESeq(dds, parallel=T)
 tform <- DESeq2::varianceStabilizingTransformation(dds, blind=FALSE)
 
+normalized_counts <- counts(dds, normalized=TRUE)
+
+# dds accounting for sequencing type
+dds_acc <- DESeq2::DESeqDataSetFromMatrix(countData = combined_counts,
+                                      colData = metadata,
+                                      design = ~ type + tissue)
+
+dds_acc <- DESeq2::DESeq(dds_acc, parallel=T)
+tform_acc <- DESeq2::varianceStabilizingTransformation(dds_acc, blind=FALSE)
+
+normalized_counts_acc <- counts(dds_acc, normalized=TRUE)
+
+save(dds, tform, normalized_counts,
+     dds_acc, tform_acc, normalized_counts_acc, 
+     metadata,
+     file="r_outputs/07-deseq_bulk_pseudobulk.Rdata")
+
 ##################################### PCA ######################################
 
 removeVar <- 0.1
