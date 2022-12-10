@@ -124,10 +124,42 @@ PCAtools::screeplot(pca.obj,
                  label = 'Elbow method', vjust = -1))
 
 
-cat(sprintf('%d PCs for Elbow method\n', elbow))
-cat(sprintf('%d PCs for Horn method\n', horn$n))
-cat(sprintf('%d PCs needed to explain %d percent of variation\n', varline.x, varline))
+cat(sprintf('%d PCs for Elbow method\n', elbow)) # 5
+cat(sprintf('%d PCs for Horn method\n', horn$n)) # 9 
+cat(sprintf('%d PCs needed to explain %d percent of variation\n', varline.x, varline)) # 5
 
+
+################################### PCA ACC ####################################
+
+removeVar <- 0.1
+pca.obj.acc <- 
+  PCAtools::pca(assay(tform_acc), metadata=metadata, removeVar=removeVar)
+cat(sprintf('Removed %d pct low variance variables, %d retained\n', 
+            removeVar*100, length(pca.obj.acc$xvars)))
+
+varline <- 50
+varline.x <- min(which(cumsum(pca.obj.acc$variance) >= varline))
+
+horn <- PCAtools::parallelPCA(assay(tform_acc), removeVar = removeVar)
+elbow <- PCAtools::findElbowPoint(pca.obj.acc$variance)
+
+PCAtools::screeplot(pca.obj.acc,
+                    axisLabSize = 6,
+                    components = getComponents(pca.obj.acc, 1:30),
+                    title="Retrotranscriptome SCREE NCI + TCGA",
+                    hline=varline, vline=c(varline.x, horn$n, elbow)
+) +
+  geom_label(aes(x=varline.x+1, y=50, 
+                 label = paste0(varline, '% var'), vjust = -1)) +
+  geom_label(aes(x = horn$n + 1, y = 50,
+                 label = 'Horn\'s', vjust = -1)) +
+  geom_label(aes(x = elbow + 1, y = 50,
+                 label = 'Elbow method', vjust = -1))
+
+
+cat(sprintf('%d PCs for Elbow method\n', elbow)) # 4
+cat(sprintf('%d PCs for Horn method\n', horn$n)) # 9 
+cat(sprintf('%d PCs needed to explain %d percent of variation\n', varline.x, varline)) # 3
 
 ################################## PAIRS PLOT ###################################
 
@@ -165,6 +197,44 @@ pairsplot(pca.obj, getComponents(pca.obj, seq_len(5)),
           gridlines.minor = FALSE)
 
 ggsave("plots/pairsplot_participant.pdf", height=8, width=9)
+
+################################ PAIRS PLOT ACC ################################
+
+pairsplot(pca.obj.acc, getComponents(pca.obj.acc, seq_len(5)),
+          labSize = 2, 
+          pointSize = 0.9,
+          colby = "tissue",
+          colkey = c("Prostate" = "#E64B35B2", "Heart" = "#4DBBD5B2",
+                     "Lung" = "#00A087B2", "E_Muscularis" = "3C5488B2",
+                     "E_Mucosa" = "#F39B7FB2", "Sk_muscle" = "#8491B4B2",
+                     "Skin" = "#91D1C2B2", "Breast" = "#DC0000B2"),
+          trianglelabSize = 12,
+          gridlines.major = FALSE,
+          gridlines.minor = FALSE)
+
+ggsave("plots/pairsplot_tissue_acc.pdf", height=8, width=9)
+
+pairsplot(pca.obj.acc, getComponents(pca.obj.acc, seq_len(5)),
+          labSize = 2, 
+          pointSize = 0.9,
+          colby = "type",
+          colkey = pal_tron("legacy", alpha = 0.7)(2),
+          trianglelabSize = 12,
+          gridlines.major = FALSE,
+          gridlines.minor = FALSE)
+
+ggsave("plots/pairsplot_seqtype_acc.pdf", height=8, width=9)
+
+pairsplot(pca.obj.acc, getComponents(pca.obj.acc, seq_len(5)),
+          labSize = 2, 
+          pointSize = 0.9,
+          colby = "participant_id",
+          colkey = pal_igv(alpha=1)(16),
+          gridlines.major = FALSE,
+          gridlines.minor = FALSE)
+
+ggsave("plots/pairsplot_participant_acc.pdf", height=8, width=9)
+
 
 ################################### BI PLOTS ###################################
 
@@ -211,3 +281,92 @@ biplot(pca.obj,
        legendPosition = "right")
 
 ggsave("plots/biplot_seqtype_pc3_pc4.pdf", height=5, width=7)
+
+biplot(pca.obj, 
+       x="PC1",
+       y="PC2",
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 3,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "type",
+       colkey = pal_tron("legacy", alpha = 0.7)(2),
+       gridlines.major = FALSE,
+       gridlines.minor = FALSE,
+       legendPosition = "right")
+
+ggsave("plots/biplot_seqtype_pc1_pc2.pdf", height=5, width=7)
+
+biplot(pca.obj, 
+       x="PC1",
+       y="PC2",
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 3,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "tissue",
+       colkey = c("Prostate" = "#E64B35B2", "Heart" = "#4DBBD5B2",
+                  "Lung" = "#00A087B2", "E_Muscularis" = "3C5488B2",
+                  "E_Mucosa" = "#F39B7FB2", "Sk_muscle" = "#8491B4B2",
+                  "Skin" = "#91D1C2B2", "Breast" = "#DC0000B2"),
+       gridlines.major = FALSE,
+       gridlines.minor = FALSE,
+       legendPosition = "right")
+
+ggsave("plots/biplot_tissue_pc1_pc2.pdf", height=5, width=7)
+
+################################# BI PLOTS ACC #################################
+
+biplot(pca.obj.acc, 
+       x="PC1",
+       y="PC2",
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 3,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "type",
+       colkey = pal_tron("legacy", alpha = 0.7)(2),
+       gridlines.major = FALSE,
+       gridlines.minor = FALSE,
+       legendPosition = "right")
+
+ggsave("plots/biplot_seqtype_pc1_pc2_acc.pdf", height=5, width=7)
+
+biplot(pca.obj.acc, 
+       x="PC1",
+       y="PC2",
+       lab = NULL,
+       showLoadings = FALSE,
+       boxedLoadingsNames = TRUE,
+       fillBoxedLoadings = alpha("white", 3/4),
+       pointSize = 3, 
+       encircle = FALSE,
+       sizeLoadingsNames = 3,
+       lengthLoadingsArrowsFactor = 1.5,
+       drawConnectors = TRUE,
+       colby = "tissue",
+       colkey = c("Prostate" = "#E64B35B2", "Heart" = "#4DBBD5B2",
+                  "Lung" = "#00A087B2", "E_Muscularis" = "3C5488B2",
+                  "E_Mucosa" = "#F39B7FB2", "Sk_muscle" = "#8491B4B2",
+                  "Skin" = "#91D1C2B2", "Breast" = "#DC0000B2"),
+       gridlines.major = FALSE,
+       gridlines.minor = FALSE,
+       legendPosition = "right")
+
+ggsave("plots/biplot_tissue_pc1_pc2_acc.pdf", height=5, width=7)
+
