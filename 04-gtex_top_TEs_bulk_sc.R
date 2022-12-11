@@ -12,6 +12,8 @@ library(gridExtra)
 library(cowplot)
 library(wesanderson)
 library(ggsci)
+library(ggplot2)
+library(ggtext)
 
 ################################## LOAD DATA ###################################
 
@@ -317,3 +319,221 @@ cowplot::plot_grid(plotlist = lapply(samples$sn_RNAseq_names, top_lines_per_samp
                    ncol=5)
 
 ggsave("plots/top_LINEs_per_sample_sc.pdf", height=20, width=20)
+
+######################### TOP TEs PER SAMPLE (BULK & SC) #######################
+
+top_bulk_tes_per_sample <- function(i) {
+  
+  sample_counts_top_bulk <- as.data.frame(counts.cpm.rtx[,samples$bulk_RNAseq[i]])
+  sample_counts_sc <- as.data.frame(pseudobulk.rtx.cpm.raw[,samples$sn_RNAseq_names[i], 
+                                                         drop = FALSE])
+  
+  row.names(sample_counts_sc) <- gsub("-", "_", row.names(sample_counts_sc))
+  colnames(sample_counts_top_bulk) <- "top_bulk"
+  colnames(sample_counts_sc) <- "sc_for_top_bulk"
+  sample_counts_top_bulk <- tibble::rownames_to_column(sample_counts_top_bulk, "TEs")
+  sample_counts_sc <- tibble::rownames_to_column(sample_counts_sc, "TEs")
+  sample_counts <- merge(sample_counts_top_bulk,sample_counts_sc, by = "TEs")
+  sample_counts <- sample_counts[order(sample_counts$top_bulk, 
+                                     decreasing = TRUE),] 
+  sample_counts <- sample_counts[1:10,]
+  sample_counts <- 
+    sample_counts %>% pivot_longer(
+      cols = c("top_bulk", "sc_for_top_bulk"),
+      names_to = c("count_type"),
+      values_to = "counts") 
+  
+  sample_counts$TEs <- factor(sample_counts$TEs, levels = unique(sample_counts$TEs))
+  sample_counts$count_type <- factor(sample_counts$count_type, levels =
+                                     c("top_bulk", "sc_for_top_bulk"))
+  
+  ggplot(sample_counts, 
+         aes(x= TEs, y=counts, fill=count_type))+
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(paste0(samples$participant_id[i], " ", samples$tissue[i])) +
+    theme(plot.title = element_textbox_simple()) +
+    geom_bar(stat='identity', position="dodge") +
+    theme(legend.position="none")
+
+}
+
+bulk_plot <-
+  cowplot::plot_grid(plotlist = lapply(seq_along(1:25), top_bulk_tes_per_sample))
+
+legend_bulk <- get_legend(
+  top_bulk_tes_per_sample(1) + 
+    theme(legend.position="right") + 
+    theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+plot_grid(bulk_plot, legend_bulk, rel_widths = c(3, .4))
+
+ggsave("plots/top_bulk_TEs_per_sample_plus_sc.pdf", height=20, width=20)
+
+######################### TOP TEs PER SAMPLE (SC & BULK) #######################
+
+top_sc_tes_per_sample <- function(i) {
+  
+  sample_counts_top_sc <- as.data.frame(pseudobulk.rtx.cpm.raw[,samples$sn_RNAseq_names[i], 
+                                                               drop = FALSE])
+  sample_counts_bulk <- as.data.frame(counts.cpm.rtx[,samples$bulk_RNAseq[i]])
+  
+  row.names(sample_counts_top_sc) <- gsub("-", "_", row.names(sample_counts_top_sc))
+  colnames(sample_counts_bulk) <- "bulk_for_top_sc"
+  colnames(sample_counts_top_sc) <- "top_sc"
+  
+  sample_counts_top_sc <- tibble::rownames_to_column(sample_counts_top_sc, "TEs")
+  sample_counts_bulk <- tibble::rownames_to_column(sample_counts_bulk, "TEs")
+  sample_counts <- merge(sample_counts_top_sc,sample_counts_bulk, by = "TEs")
+  sample_counts <- sample_counts[order(sample_counts$top_sc, 
+                                       decreasing = TRUE),] 
+  
+  sample_counts <- sample_counts[1:10,]
+  sample_counts <- 
+    sample_counts %>% pivot_longer(
+      cols = c("top_sc", "bulk_for_top_sc"),
+      names_to = c("count_type"),
+      values_to = "counts") 
+  
+  sample_counts$TEs <- factor(sample_counts$TEs, levels = unique(sample_counts$TEs))
+  sample_counts$count_type <- factor(sample_counts$count_type, levels =
+                                       c("bulk_for_top_sc", "top_sc"))
+  
+  ggplot(sample_counts, 
+         aes(x= TEs, y=counts, fill=count_type))+
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(paste0(samples$participant_id[i], " ", samples$tissue[i])) +
+    theme(plot.title = element_textbox_simple()) +
+    geom_bar(stat='identity', position="dodge") +
+    theme(legend.position="none")
+}
+
+sc_plot <-
+  cowplot::plot_grid(plotlist = lapply(seq_along(1:25), top_sc_tes_per_sample))
+
+legend_sc <- get_legend(
+  top_sc_tes_per_sample(1) + 
+    theme(legend.position="right") + 
+    theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+plot_grid(sc_plot, legend_sc, rel_widths = c(3, .4))
+
+ggsave("plots/top_sc_TEs_per_sample_plus_bulk.pdf", height=20, width=20)
+
+######################## TOP HERVs PER SAMPLE (BULK & SC) ######################
+
+top_bulk_hervs_per_sample <- function(i) {
+  
+  sample_counts_top_bulk <- as.data.frame(counts.cpm.herv[,samples$bulk_RNAseq[i]])
+  sample_counts_sc <- as.data.frame(pseudobulk.herv.cpm.raw[,samples$sn_RNAseq_names[i], 
+                                                           drop = FALSE])
+  
+  row.names(sample_counts_sc) <- gsub("-", "_", row.names(sample_counts_sc))
+  colnames(sample_counts_top_bulk) <- "top_bulk"
+  colnames(sample_counts_sc) <- "sc_for_top_bulk"
+  sample_counts_top_bulk <- tibble::rownames_to_column(sample_counts_top_bulk, "TEs")
+  sample_counts_sc <- tibble::rownames_to_column(sample_counts_sc, "TEs")
+  sample_counts <- merge(sample_counts_top_bulk,sample_counts_sc, by = "TEs")
+  sample_counts <- sample_counts[order(sample_counts$top_bulk, 
+                                       decreasing = TRUE),] 
+  sample_counts <- sample_counts[1:10,]
+  sample_counts <- 
+    sample_counts %>% pivot_longer(
+      cols = c("top_bulk", "sc_for_top_bulk"),
+      names_to = c("count_type"),
+      values_to = "counts") 
+  
+  sample_counts$TEs <- factor(sample_counts$TEs, levels = unique(sample_counts$TEs))
+  sample_counts$count_type <- factor(sample_counts$count_type, levels =
+                                       c("top_bulk", "sc_for_top_bulk"))
+  
+  ggplot(sample_counts, 
+         aes(x= TEs, y=counts, fill=count_type))+
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(paste0(samples$participant_id[i], " ", samples$tissue[i])) +
+    theme(plot.title = element_textbox_simple()) +
+    geom_bar(stat='identity', position="dodge") +
+    theme(legend.position="none")
+  
+}
+
+bulk_herv_plot <-
+  cowplot::plot_grid(plotlist = lapply(seq_along(1:25), top_bulk_hervs_per_sample))
+
+legend_bulk_herv <- get_legend(
+  top_bulk_hervs_per_sample(1) + 
+    theme(legend.position="right") + 
+    theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+plot_grid(bulk_herv_plot, legend_bulk_herv, rel_widths = c(3, .4))
+
+ggsave("plots/top_bulk_hervs_per_sample_plus_sc.pdf", height=20, width=20)
+
+######################### TOP HERVs PER SAMPLE (SC & BULK) #######################
+
+top_sc_hervs_per_sample <- function(i) {
+  
+  sample_counts_top_sc <- as.data.frame(pseudobulk.herv.cpm.raw[,samples$sn_RNAseq_names[i], 
+                                                               drop = FALSE])
+  sample_counts_bulk <- as.data.frame(counts.cpm.herv[,samples$bulk_RNAseq[i]])
+  
+  row.names(sample_counts_top_sc) <- gsub("-", "_", row.names(sample_counts_top_sc))
+  colnames(sample_counts_bulk) <- "bulk_for_top_sc"
+  colnames(sample_counts_top_sc) <- "top_sc"
+  
+  sample_counts_top_sc <- tibble::rownames_to_column(sample_counts_top_sc, "TEs")
+  sample_counts_bulk <- tibble::rownames_to_column(sample_counts_bulk, "TEs")
+  sample_counts <- merge(sample_counts_top_sc,sample_counts_bulk, by = "TEs")
+  sample_counts <- sample_counts[order(sample_counts$top_sc, 
+                                       decreasing = TRUE),] 
+  
+  sample_counts <- sample_counts[1:10,]
+  sample_counts <- 
+    sample_counts %>% pivot_longer(
+      cols = c("top_sc", "bulk_for_top_sc"),
+      names_to = c("count_type"),
+      values_to = "counts") 
+  
+  sample_counts$TEs <- factor(sample_counts$TEs, levels = unique(sample_counts$TEs))
+  sample_counts$count_type <- factor(sample_counts$count_type, levels =
+                                       c("bulk_for_top_sc", "top_sc"))
+  
+  ggplot(sample_counts, 
+         aes(x= TEs, y=counts, fill=count_type))+
+    theme_cowplot() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(
+            angle = 30, vjust = 1, hjust=1, size = 13)) +
+    ylab("CPM") +
+    ggtitle(paste0(samples$participant_id[i], " ", samples$tissue[i])) +
+    theme(plot.title = element_textbox_simple()) +
+    geom_bar(stat='identity', position="dodge") +
+    theme(legend.position="none")
+}
+
+sc_herv_plot <-
+  cowplot::plot_grid(plotlist = lapply(seq_along(1:25), top_sc_hervs_per_sample))
+
+legend_sc_hervs <- get_legend(
+  top_sc_hervs_per_sample(1) + 
+    theme(legend.position="right") + 
+    theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+plot_grid(sc_herv_plot, legend_sc_hervs, rel_widths = c(3, .4))
+
+ggsave("plots/top_sc_hervs_per_sample_plus_bulk.pdf", height=20, width=20)
