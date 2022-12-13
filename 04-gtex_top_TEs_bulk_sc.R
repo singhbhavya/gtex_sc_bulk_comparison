@@ -537,3 +537,5 @@ legend_sc_hervs <- get_legend(
 plot_grid(sc_herv_plot, legend_sc_hervs, rel_widths = c(3, .4))
 
 ggsave("plots/top_sc_hervs_per_sample_plus_bulk.pdf", height=20, width=20)
+
+
