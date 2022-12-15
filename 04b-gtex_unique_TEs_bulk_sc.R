@@ -14,7 +14,9 @@ library(wesanderson)
 library(ggsci)
 library(ggplot2)
 library(ggtext)
-library(ggvenn)
+library(ggVennDiagram)
+library(UpSetR)
+library(ComplexUpset)
 
 ################################## LOAD DATA ###################################
 
@@ -95,3 +97,125 @@ long_counts <-
 
 long_counts$tissue <- metadata$tissue[match(long_counts$sample, row.names(metadata))]
 long_counts$type <- metadata$type[match(long_counts$sample, row.names(metadata))]
+
+bulk <- sort(unique(long_counts$te[long_counts$type == "bulk"]))
+sc <- sort(unique(long_counts$te[long_counts$type == "sc"]))
+
+# Function to get unique TE lists
+
+unique_tes_per_tissue <- function(tiss) {
+  
+  tiss_bulk <-sort(unique(long_counts$te[long_counts$type == "bulk" &
+                               long_counts$tissue == tiss]))
+  tiss_sc <- sort(unique(long_counts$te[long_counts$type == "sc" &
+                                          long_counts$tissue == tiss]))
+
+  assign(paste0(tiss, "_bulk"), tiss_bulk, envir = .GlobalEnv)
+  assign(paste0(tiss, "_sc"), tiss_sc, envir = .GlobalEnv)
+  
+}
+
+lapply(unique(metadata$tissue), unique_tes_per_tissue)
+
+# Set of bulk TEs
+bulk.sets <- list(Heart_bulk, Sk_muscle_bulk, Skin_bulk, E_Mucosa_bulk, 
+                  E_Muscularis_bulk, Prostate_bulk, Breast_bulk, Lung_bulk)
+names(bulk.sets) <- c("Heart","Skeletal muscle", "Skin", "E Mucosa",
+                      "E Muscularis", "Prostate", "Breast", "Lung")
+
+# Set of single cell TEs
+sc.sets <- list(Heart_sc, Sk_muscle_sc, Skin_sc, E_Mucosa_sc, 
+                E_Muscularis_sc, Prostate_sc, Breast_sc, Lung_sc)
+names(sc.sets) <- c("Heart","Skeletal muscle", "Skin", "E Mucosa",
+                    "E Muscularis", "Prostate", "Breast", "Lung")
+
+
+################################ VENN DIAGRAMS #################################
+
+# Venn diagram of bulk versus single cell
+ggVennDiagram(x = list(bulk,sc),  
+              category.names = c("Bulk","Single cell")) + 
+  scale_color_brewer(palette = "Paired") 
+
+################################ COMPLEX UPSET #################################
+
+# Setting up dataframes
+tissue_counts_bulk <- long_counts[!(long_counts$type=="sc"),]
+tissue_counts_sc <- long_counts[!(long_counts$type=="bulk"),]
+
+tissue_counts_bulk <- tissue_counts_bulk[,c("te", "tissue", "value")]
+tissue_counts_bulk$value <- TRUE
+tissue_counts_bulk <- unique(tissue_counts_bulk)
+tissue_counts_bulk <- tissue_counts_bulk %>%
+  pivot_wider(names_from = "tissue",
+              values_from = "value", 
+              values_fill = FALSE)
+tissue_counts_bulk <- tissue_counts_bulk[,c(colnames(tissue_counts_bulk[2:9]))]
+
+tissue_counts_sc <- tissue_counts_sc[,c("te", "tissue", "value")]
+tissue_counts_sc$value <- TRUE
+tissue_counts_sc <- unique(tissue_counts_sc)
+tissue_counts_sc <- tissue_counts_sc %>%
+  pivot_wider(names_from = "tissue",
+              values_from = "value", 
+              values_fill = FALSE)
+tissue_counts_sc <- tissue_counts_sc[,c(colnames(tissue_counts_sc[2:9]))]
+
+tissues = colnames(tissue_counts_bulk)
+
+# Upset plot for bulk
+upset(tissue_counts_bulk, tissues, name='Shared and Unique TEs Per Tissue Type in Bulk',
+      intersections = list( 
+        c("Heart","Sk_muscle", "Skin", "E_Mucosa",
+             "E_Muscularis", "Prostate", "Breast", "Lung"), 
+        c("Heart"), 
+        c("Sk_muscle"), 
+        c("Skin"),
+        c("E_Mucosa"), 
+        c("E_Muscularis"),
+        c("Prostate"),
+        c("Breast"),
+        c("Lung")), 
+      queries = list(
+        upset_query(set=c("Prostate"), color = "#E64B35B2", fill = "#E64B35B2"),
+        upset_query(set=c("Heart"), color = "#4DBBD5B2", fill = "#4DBBD5B2"),
+        upset_query(set=c("E_Muscularis"), color = "#3C5488B2", fill = "#3C5488B2"),
+        upset_query(set=c("E_Mucosa"), color = "#F39B7FB2", fill = "#F39B7FB2"),
+        upset_query(set=c("Sk_muscle"), color = "#8491B4B2", fill = "#8491B4B2"),
+        upset_query(set=c("Skin"), color = "#91D1C2B2", fill = "#91D1C2B2"),
+        upset_query(set=c("Lung"), color = "#00A087B2", fill = "#00A087B2"),
+        upset_query(set=c("Breast"), color = "#DC0000B2", fill = "#DC0000B2")
+        ),
+      set_sizes=(
+        upset_set_size()
+        + ylab('Total TEs Per Tissue') ))
+
+# Upset for single cell
+upset(tissue_counts_sc, tissues, name='Shared and Unique TEs Per Tissue Type in Single Cell',
+      intersections = list( 
+        c("Heart","Sk_muscle", "Skin", "E_Mucosa",
+          "E_Muscularis", "Prostate", "Breast", "Lung"), 
+        c("Heart"), 
+        c("Sk_muscle"), 
+        c("Skin"),
+        c("E_Mucosa"), 
+        c("E_Muscularis"),
+        c("Prostate"),
+        c("Breast"),
+        c("Lung")), 
+      queries = list(
+        upset_query(set=c("Prostate"), color = "#E64B35B2", fill = "#E64B35B2"),
+        upset_query(set=c("Heart"), color = "#4DBBD5B2", fill = "#4DBBD5B2"),
+        upset_query(set=c("E_Muscularis"), color = "#3C5488B2", fill = "#3C5488B2"),
+        upset_query(set=c("E_Mucosa"), color = "#F39B7FB2", fill = "#F39B7FB2"),
+        upset_query(set=c("Sk_muscle"), color = "#8491B4B2", fill = "#8491B4B2"),
+        upset_query(set=c("Skin"), color = "#91D1C2B2", fill = "#91D1C2B2"),
+        upset_query(set=c("Lung"), color = "#00A087B2", fill = "#00A087B2"),
+        upset_query(set=c("Breast"), color = "#DC0000B2", fill = "#DC0000B2")
+      ),
+      set_sizes=(
+        upset_set_size()
+        + ylab('Total TEs Per Tissue') ))
+
+
+
