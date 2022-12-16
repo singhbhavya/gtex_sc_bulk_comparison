@@ -362,3 +362,184 @@ ggplot(long_counts, aes(type, value, fill=tissue)) +
   theme_cowplot()
 
 dev.off()
+
+####################### TISSUE-LEVEL SHARED AND UNIQUE TEs #####################
+
+# heart
+heart_venn <-
+  ggvenn(list(`Bulk` = Heart_bulk, `Single Cell` = Heart_sc),
+       c("Bulk", "Single Cell"),
+       fill_color = c("#f8766d", "#00bfc4"),
+       set_name_size = 2, text_size = 2) + 
+  ggtitle("Heart") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# lung
+lung_venn <-
+  ggvenn(list(`Bulk` = Lung_bulk, `Single Cell` = Lung_sc),
+       c("Bulk", "Single Cell"),
+       fill_color = c("#f8766d", "#00bfc4"),
+       set_name_size = 2, text_size = 2) + 
+  ggtitle("Lung") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# prostate 
+prostate_venn <- 
+  ggvenn(list(`Bulk` = Prostate_bulk, `Single Cell` = Prostate_sc),
+       c("Bulk", "Single Cell"),
+       fill_color = c("#f8766d", "#00bfc4"),
+       set_name_size = 2, text_size = 2) + 
+  ggtitle("Prostate") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# Sk_muscle
+sk_muscle_venn <-
+  ggvenn(list(`Bulk` = Sk_muscle_bulk, `Single Cell` = Sk_muscle_sc),
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
+  ggtitle("Sk muscle") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# E_muscularis
+E_muscularis_venn <-
+  ggvenn(list(`Bulk` = E_Muscularis_bulk, `Single Cell` = E_Muscularis_sc),
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
+  ggtitle("E. muscularis") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# E_mucosa
+E_mucosa_venn <-
+  ggvenn(list(`Bulk` = E_Mucosa_bulk, `Single Cell` = E_Mucosa_sc),
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
+  ggtitle("E. mucosa") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# Breast
+Breast_venn <-
+  ggvenn(list(`Bulk` = Breast_bulk, `Single Cell` = Breast_sc),
+         c("Bulk", "Single Cell"), 
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
+  ggtitle("Breast") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+# Skin
+Skin_venn <-
+  ggvenn(list(`Bulk` = Skin_bulk, `Single Cell` = Skin_sc),
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
+  ggtitle("Skin") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+pdf("plots/04b-tissue_venns.pdf", height=4, width=7.6)
+cowplot::plot_grid(heart_venn, lung_venn, prostate_venn, sk_muscle_venn,
+                   E_muscularis_venn, E_mucosa_venn, Breast_venn, Skin_venn,
+                   ncol=4)
+
+dev.off()
+
+####################### TISSUE-LEVEL SHARED AND UNIQUE TEs #####################
+
+shared_unique_tissues <-
+  function(bulk_tissue, sc_tissue, tissue_name) {
+    
+    both <- as.data.frame(intersect(bulk_tissue, sc_tissue))
+    colnames(both) <- c("TE")
+    both$family <- retro.annot$family[match(both$TE, retro.annot$locus)]
+    both_only_families <-
+      both %>% dplyr::count(family, sort = TRUE) 
+    colnames(both_only_families) <- c("family", "both")
+    
+    bulk_only <- as.data.frame(setdiff(bulk_tissue, sc_tissue))
+    colnames(bulk_only) <- c("TE")
+    bulk_only$family <- retro.annot$family[match(bulk_only$TE, retro.annot$locus)]
+    bulk_only_families <-
+      bulk_only %>% dplyr::count(family, sort = TRUE) 
+    colnames(bulk_only_families) <- c("family", "bulk")
+    
+    sc_only <- as.data.frame(setdiff(sc_tissue, bulk_tissue))
+    colnames(sc_only) <- c("TE")
+    sc_only$family <- retro.annot$family[match(sc_only$TE, retro.annot$locus)]
+    sc_only_families <-
+      sc_only %>% dplyr::count(family, sort = TRUE) 
+    colnames(sc_only_families) <- c("family", "sc")
+    
+    merged_family_breakdown <- merge(bulk_only_families, 
+                                     sc_only_families,
+                                     by = "family", all = TRUE) %>%
+      merge(both_only_families, by = "family", all = TRUE)
+    
+    merged_family_breakdown[is.na(merged_family_breakdown)] <- 0
+    
+    merged_family_breakdown <-
+      merged_family_breakdown %>%
+      pivot_longer(
+        cols = c("bulk", "sc", "both"),
+        names_to = "Identified_in",
+        values_to = "TE_count"
+      )
+    
+    total_merged_family_breakdown <- 
+      merged_family_breakdown %>%
+      group_by(Identified_in) %>%
+      summarize(total = sum(TE_count))
+    
+    ggplot(merged_family_breakdown, aes(fill=reorder(family, -TE_count), y=Identified_in, x=TE_count)) + 
+      geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+      scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                                   pal_npg("nrc", alpha = 0.7)(10),
+                                   pal_jco("default", alpha=0.7)(10),
+                                   pal_nejm("default", alpha=0.7)(8),
+                                   pal_tron("legacy", alpha=0.7)(7),
+                                   pal_lancet("lanonc", alpha=0.7)(9),
+                                   pal_startrek("uniform", alpha=0.7)(7))) + 
+      coord_flip() +
+      theme_pubclean() + 
+      guides(fill=guide_legend(title="TE Family")) +
+      ylab("TEs identified") +
+      xlab("Proportion of TEs") + 
+      theme(legend.position = c("right")) + 
+      guides(fill = guide_legend(ncol = 2)) +
+      ggtitle(tissue_name) + 
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title=element_blank())
+
+}
+
+pdf("plots/04b-te_families_heart_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(Heart_bulk, Heart_sc, "Heart")
+dev.off()
+
+pdf("plots/04b-te_families_lung_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(Lung_bulk, Lung_sc, "Lung")
+dev.off()
+
+pdf("plots/04b-te_families_e_muscularis_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(E_Muscularis_bulk, E_Muscularis_sc, "E. muscolaris")
+dev.off()
+
+pdf("plots/04b-te_families_e_mucosa_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(E_Mucosa_bulk, E_Mucosa_sc, "E. mucosa")
+dev.off()
+
+pdf("plots/04b-te_families_prostate_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(Prostate_bulk, Prostate_sc, "Prostate")
+dev.off()
+
+pdf("plots/04b-te_families_breast_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(Breast_bulk, Breast_sc, "Breast")
+dev.off()
+
+pdf("plots/04b-te_families_skin_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(Skin_bulk, Skin_sc, "Skin")
+dev.off()
+
+pdf("plots/04b-te_families_sk_muscle_bulk_sc.pdf", height=8, width=5)
+shared_unique_tissues(Sk_muscle_bulk, Sk_muscle_sc, "Sk muscle")
+dev.off()
