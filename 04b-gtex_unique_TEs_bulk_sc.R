@@ -17,6 +17,7 @@ library(ggtext)
 library(ggVennDiagram)
 library(UpSetR)
 library(ComplexUpset)
+library(ggsci)
 
 ################################## LOAD DATA ###################################
 
@@ -42,6 +43,29 @@ bulk_samples <- subset(bulk_samples, select = -c(remove))
 bulk_samples$type <- "bulk"
 
 metadata <- rbind(bulk_samples, sc_samples)
+
+################################ ANNOTATIONS ###################################
+## load annotation
+retro.hg38.v1 <-
+  readr::read_tsv(
+    "https://github.com/mlbendall/telescope_annotation_db/raw/master/builds/retro.hg38.v1/genes.tsv.gz",
+    na=c('.'))
+retro.hg38.v1 <- retro.hg38.v1 %>%
+  tidyr::separate(locus, c("family"), sep='_', remove=F, extra='drop') %>%
+  dplyr::mutate(
+    te_class = factor(ifelse(is.na(l1base_id), 'LTR', 'LINE'), levels=c('LTR','LINE')),
+  )
+
+# Remove the confounding LINE element (L1FLnI_Xq21.1db) that has a poly A tail
+# in the middle of it:
+
+retro.hg38.v1<-
+  retro.hg38.v1[!(retro.hg38.v1$locus=="L1FLnI_Xq21.1db"),]
+
+retro.annot <- retro.hg38.v1
+row.names(retro.annot) <- retro.annot$locus
+row.names(retro.annot) <- gsub("_", "-", row.names(retro.annot))
+
 
 ################################## DATA SETUP ##################################
 
@@ -133,9 +157,14 @@ names(sc.sets) <- c("Heart","Skeletal muscle", "Skin", "E Mucosa",
 ################################ VENN DIAGRAMS #################################
 
 # Venn diagram of bulk versus single cell
+pdf("plots/04b-bulk_sc_venn.pdf", height=2, width=4)
 ggVennDiagram(x = list(bulk,sc),  
-              category.names = c("Bulk","Single cell")) + 
+              category.names = c("Bulk","Single cell"),
+              fill_color = c("#f8766d", "#00bfc4"),
+              label_alpha = 0,
+              label_color = "white") + 
   scale_color_brewer(palette = "Paired") 
+dev.off()
 
 ################################ COMPLEX UPSET #################################
 
@@ -164,6 +193,7 @@ tissue_counts_sc <- tissue_counts_sc[,c(colnames(tissue_counts_sc[2:9]))]
 tissues = colnames(tissue_counts_bulk)
 
 # Upset plot for bulk
+pdf("plots/04b-bulk_tissue_upset.pdf", height=4, width=7)
 upset(tissue_counts_bulk, tissues, name='Shared and Unique TEs Per Tissue Type in Bulk',
       intersections = list( 
         c("Heart","Sk_muscle", "Skin", "E_Mucosa",
@@ -190,6 +220,9 @@ upset(tissue_counts_bulk, tissues, name='Shared and Unique TEs Per Tissue Type i
         upset_set_size()
         + ylab('Total TEs Per Tissue') ))
 
+dev.off()
+
+pdf("plots/04b-sc_tissue_upset.pdf", height=4, width=7)
 # Upset for single cell
 upset(tissue_counts_sc, tissues, name='Shared and Unique TEs Per Tissue Type in Single Cell',
       intersections = list( 
@@ -216,6 +249,69 @@ upset(tissue_counts_sc, tissues, name='Shared and Unique TEs Per Tissue Type in 
       set_sizes=(
         upset_set_size()
         + ylab('Total TEs Per Tissue') ))
+dev.off()
 
+###################### FAMILY-LEVEL SHARED AND UNIQUE TEs ######################
 
+# Setting up dataframes
 
+both <- as.data.frame(intersect(bulk, sc))
+colnames(both) <- c("TE")
+both$family <- retro.annot$family[match(both$TE, retro.annot$locus)]
+both_only_families <-
+  both %>% dplyr::count(family, sort = TRUE) 
+colnames(both_only_families) <- c("family", "both")
+
+bulk_only <- as.data.frame(setdiff(bulk, sc))
+colnames(bulk_only) <- c("TE")
+bulk_only$family <- retro.annot$family[match(bulk_only$TE, retro.annot$locus)]
+bulk_only_families <-
+  bulk_only %>% dplyr::count(family, sort = TRUE) 
+colnames(bulk_only_families) <- c("family", "bulk")
+
+sc_only <- as.data.frame(setdiff(sc, bulk))
+colnames(sc_only) <- c("TE")
+sc_only$family <- retro.annot$family[match(sc_only$TE, retro.annot$locus)]
+sc_only_families <-
+  sc_only %>% dplyr::count(family, sort = TRUE) 
+colnames(sc_only_families) <- c("family", "sc")
+
+merged_family_breakdown <- merge(bulk_only_families, 
+                                 sc_only_families,
+                                 by = "family", all = TRUE) %>%
+  merge(both_only_families, by = "family", all = TRUE)
+
+merged_family_breakdown[is.na(merged_family_breakdown)] <- 0
+
+merged_family_breakdown <-
+  merged_family_breakdown %>%
+  pivot_longer(
+    cols = c("bulk", "sc", "both"),
+    names_to = "Identified_in",
+    values_to = "TE_count"
+  )
+
+total_merged_family_breakdown <- 
+  merged_family_breakdown %>%
+  group_by(Identified_in) %>%
+  summarize(total = sum(TE_count))
+
+pdf("plots/04b-te_families_bulk_sc.pdf", height=8, width=5)
+ggplot(merged_family_breakdown, aes(fill=reorder(family, -TE_count), y=Identified_in, x=TE_count)) + 
+  geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7))) + 
+  coord_flip() +
+  theme_pubclean() +  
+  guides(fill=guide_legend(title="TE Family")) +
+  ylab("TEs identified") +
+  xlab("Proportion of TEs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(ncol = 2))
+
+dev.off()
