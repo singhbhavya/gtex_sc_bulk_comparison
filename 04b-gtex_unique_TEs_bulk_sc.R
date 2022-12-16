@@ -315,3 +315,41 @@ ggplot(merged_family_breakdown, aes(fill=reorder(family, -TE_count), y=Identifie
   guides(fill = guide_legend(ncol = 2))
 
 dev.off()
+
+############################### TE DISTRIBUTION ################################
+
+pdf("plots/04b-violin_bulk_sc.pdf", height=3, width=4)
+ggplot(long_counts, aes(type, value, fill=type)) +
+  geom_violin() +
+  stat_summary(fun=mean, geom="point", shape=23, size=2) + 
+  scale_y_continuous(trans = "log10") +
+  theme_cowplot() +
+  xlab("GTEx Sequencing Type") +
+  ylab("TE Expression") + 
+  theme(legend.position = c("None"))
+dev.off()
+  
+pdf("plots/04b-violin_bulk_sc_tissue.pdf", height=3, width=5)
+ggplot(long_counts, aes(tissue, value, fill=type)) +
+  geom_violin() +
+  stat_summary(fun=mean, geom="point", shape=2, size=2) + 
+  scale_y_continuous(trans = "log10") +
+  theme_cowplot() +
+  xlab("GTEx Sequencing Type") +
+  ylab("TE Expression") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+dev.off()
+
+pdf("plots/04b-violin_tissue_bulk_sc.pdf", height=3, width=5)
+ggplot(long_counts, aes(type, value, fill=tissue)) +
+  geom_violin() +
+  stat_summary(fun=mean, geom="point", shape=23, size=2) + 
+  scale_y_continuous(trans = "log10") +
+  scale_fill_manual(values=c("#DC0000B2", "#F39B7FB2", "#3C5488B2", "#4DBBD5B2",
+                             "#00A087B2", "#E64B35B2", "#8491B4B2", "#91D1C2B2")) +
+  xlab("GTEx Sequencing Tissue and Type") +
+  ylab("TE Expression") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  theme_cowplot()
+
+dev.off()
