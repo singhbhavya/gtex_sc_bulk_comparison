@@ -161,9 +161,18 @@ pdf("plots/04b-bulk_sc_venn.pdf", height=2, width=4)
 ggVennDiagram(x = list(bulk,sc),  
               category.names = c("Bulk","Single cell"),
               fill_color = c("#f8766d", "#00bfc4"),
+              set_color = c("#f8766d", "#00bfc4"),
               label_alpha = 0,
               label_color = "white") + 
-  scale_color_brewer(palette = "Paired") 
+  scale_fill_brewer(values = c("#f8766d", "#00bfc4"))
+dev.off()
+
+a <- list(`Bulk` = sort(unique(long_counts$te[long_counts$type == "bulk"])),
+          `Single Cell` = sort(unique(long_counts$te[long_counts$type == "sc"])))
+
+pdf("plots/04b-bulk_sc_venn.pdf", height=4, width=5)
+ggvenn(a, c("Bulk", "Single Cell"),
+       fill_color = c("#f8766d", "#00bfc4"))
 dev.off()
 
 ################################ COMPLEX UPSET #################################
