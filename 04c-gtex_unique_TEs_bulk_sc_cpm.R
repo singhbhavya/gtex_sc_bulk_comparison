@@ -2,7 +2,7 @@
 ################################################################################
 ################################################################################
 ################################################################################
-###################  GTEx: Common TEs in Bulk and SC Using Counts ##############
+####################  GTEx: Common TEs in Bulk and SC Using CPM  ###############
 
 #################################### SETUP #####################################
 
@@ -70,17 +70,17 @@ row.names(retro.annot) <- gsub("_", "-", row.names(retro.annot))
 
 ################################## DATA SETUP ##################################
 
-# Merge counts
-row.names(pseudobulk.rtx.counts.raw) <- gsub("-", "_", row.names(pseudobulk.rtx.counts.raw))
+# Merge cpm
+row.names(pseudobulk.rtx.cpm.raw) <- gsub("-", "_", row.names(pseudobulk.rtx.cpm.raw))
 
-combined_counts <- merge(counts.rtx, pseudobulk.rtx.counts.raw, 
-                         by.x="row.names", by.y="row.names",
-                         all.y=TRUE)
+combined_cpm <- merge(counts.cpm.rtx, pseudobulk.rtx.cpm.raw, 
+                      by.x="row.names", by.y="row.names",
+                      all.y=TRUE)
 
-rownames(combined_counts) <- combined_counts[,1]
-combined_counts[,1] <- NULL
+rownames(combined_cpm) <- combined_cpm[,1]
+combined_cpm[,1] <- NULL
 
-stopifnot(all(colnames(combined_counts) == rownames(metadata)))
+stopifnot(all(colnames(combined_cpm) == rownames(metadata)))
 
 ################################# COLOR SETUP ##################################
 
@@ -96,35 +96,35 @@ tissue_color<- data.frame(tissues, mycols)
 samples$color <- 
   tissue_color$mycols[match(samples$tissue, tissue_color$tissues)]
 
-################################ UNIQUE COUNTS #################################
+################################# UNIQUE CPM ###################################
 
-long_counts <- combined_counts
-long_counts$te <- rownames(combined_counts)
+long_cpm <- combined_cpm
+long_cpm$te <- rownames(combined_cpm)
 
-long_counts <-
-  long_counts %>% pivot_longer(
-  cols = 1:50,
-  names_to = "sample",
-  values_to  = "value"
+long_cpm <-
+  long_cpm %>% pivot_longer(
+    cols = 1:50,
+    names_to = "sample",
+    values_to  = "value"
   )
 
-long_counts$tissue <- metadata$tissue[match(long_counts$sample, row.names(metadata))]
-long_counts$type <- metadata$type[match(long_counts$sample, row.names(metadata))]
+long_cpm$tissue <- metadata$tissue[match(long_cpm$sample, row.names(metadata))]
+long_cpm$type <- metadata$type[match(long_cpm$sample, row.names(metadata))]
 
-long_counts <- long_counts[!long_counts$value == 0,]
+long_cpm <- long_cpm[!long_cpm$value == 0,]
 
-bulk <- sort(unique(long_counts$te[long_counts$type == "bulk"]))
-sc <- sort(unique(long_counts$te[long_counts$type == "sc"]))
+bulk <- sort(unique(long_cpm$te[long_cpm$type == "bulk"]))
+sc <- sort(unique(long_cpm$te[long_cpm$type == "sc"]))
 
 # Function to get unique TE lists
 
 unique_tes_per_tissue <- function(tiss) {
   
-  tiss_bulk <-sort(unique(long_counts$te[long_counts$type == "bulk" &
-                               long_counts$tissue == tiss]))
-  tiss_sc <- sort(unique(long_counts$te[long_counts$type == "sc" &
-                                          long_counts$tissue == tiss]))
-
+  tiss_bulk <-sort(unique(long_cpm$te[long_cpm$type == "bulk" &
+                                        long_cpm$tissue == tiss]))
+  tiss_sc <- sort(unique(long_cpm$te[long_cpm$type == "sc" &
+                                       long_cpm$tissue == tiss]))
+  
   assign(paste0(tiss, "_bulk"), tiss_bulk, envir = .GlobalEnv)
   assign(paste0(tiss, "_sc"), tiss_sc, envir = .GlobalEnv)
   
@@ -144,13 +144,12 @@ sc.sets <- list(Heart_sc, Sk_muscle_sc, Skin_sc, E_Mucosa_sc,
 names(sc.sets) <- c("Heart","Skeletal muscle", "Skin", "E Mucosa",
                     "E Muscularis", "Prostate", "Breast", "Lung")
 
-
 ################################ VENN DIAGRAMS #################################
 
-a <- list(`Bulk` = sort(unique(long_counts$te[long_counts$type == "bulk"])),
-          `Single Cell` = sort(unique(long_counts$te[long_counts$type == "sc"])))
+a <- list(`Bulk` = sort(unique(long_cpm$te[long_cpm$type == "bulk"])),
+          `Single Cell` = sort(unique(long_cpm$te[long_cpm$type == "sc"])))
 
-pdf("plots/04b-bulk_sc_venn_counts.pdf", height=4, width=5)
+pdf("plots/04c-bulk_sc_venn_cpm.pdf", height=4, width=5)
 ggvenn(a, c("Bulk", "Single Cell"),
        fill_color = c("#f8766d", "#00bfc4"))
 dev.off()
@@ -158,35 +157,35 @@ dev.off()
 ################################ COMPLEX UPSET #################################
 
 # Setting up dataframes
-tissue_counts_bulk <- long_counts[!(long_counts$type=="sc"),]
-tissue_counts_sc <- long_counts[!(long_counts$type=="bulk"),]
+tissue_cpm_bulk <- long_cpm[!(long_cpm$type=="sc"),]
+tissue_cpm_sc <- long_cpm[!(long_cpm$type=="bulk"),]
 
-tissue_counts_bulk <- tissue_counts_bulk[,c("te", "tissue", "value")]
-tissue_counts_bulk$value <- TRUE
-tissue_counts_bulk <- unique(tissue_counts_bulk)
-tissue_counts_bulk <- tissue_counts_bulk %>%
+tissue_cpm_bulk <- tissue_cpm_bulk[,c("te", "tissue", "value")]
+tissue_cpm_bulk$value <- TRUE
+tissue_cpm_bulk <- unique(tissue_cpm_bulk)
+tissue_cpm_bulk <- tissue_cpm_bulk %>%
   pivot_wider(names_from = "tissue",
               values_from = "value", 
               values_fill = FALSE)
-tissue_counts_bulk <- tissue_counts_bulk[,c(colnames(tissue_counts_bulk[2:9]))]
+tissue_cpm_bulk <- tissue_cpm_bulk[,c(colnames(tissue_cpm_bulk[2:9]))]
 
-tissue_counts_sc <- tissue_counts_sc[,c("te", "tissue", "value")]
-tissue_counts_sc$value <- TRUE
-tissue_counts_sc <- unique(tissue_counts_sc)
-tissue_counts_sc <- tissue_counts_sc %>%
+tissue_cpm_sc <- tissue_cpm_sc[,c("te", "tissue", "value")]
+tissue_cpm_sc$value <- TRUE
+tissue_cpm_sc <- unique(tissue_cpm_sc)
+tissue_cpm_sc <- tissue_cpm_sc %>%
   pivot_wider(names_from = "tissue",
               values_from = "value", 
               values_fill = FALSE)
-tissue_counts_sc <- tissue_counts_sc[,c(colnames(tissue_counts_sc[2:9]))]
+tissue_cpm_sc <- tissue_cpm_sc[,c(colnames(tissue_cpm_sc[2:9]))]
 
-tissues = colnames(tissue_counts_bulk)
+tissues = colnames(tissue_cpm_bulk)
 
 # Upset plot for bulk
-pdf("plots/04b-bulk_tissue_upset_counts.pdf", height=4, width=7)
-upset(tissue_counts_bulk, tissues, name='Shared and Unique TEs Per Tissue Type in Bulk',
+pdf("plots/04c-bulk_tissue_upset_cpm.pdf", height=4, width=7)
+upset(tissue_cpm_bulk, tissues, name='Shared and Unique TEs Per Tissue Type in Bulk',
       intersections = list( 
         c("Heart","Sk_muscle", "Skin", "E_Mucosa",
-             "E_Muscularis", "Prostate", "Breast", "Lung"), 
+          "E_Muscularis", "Prostate", "Breast", "Lung"), 
         c("Heart"), 
         c("Sk_muscle"), 
         c("Skin"),
@@ -204,16 +203,16 @@ upset(tissue_counts_bulk, tissues, name='Shared and Unique TEs Per Tissue Type i
         upset_query(set=c("Skin"), color = "#91D1C2B2", fill = "#91D1C2B2"),
         upset_query(set=c("Lung"), color = "#00A087B2", fill = "#00A087B2"),
         upset_query(set=c("Breast"), color = "#DC0000B2", fill = "#DC0000B2")
-        ),
+      ),
       set_sizes=(
         upset_set_size()
         + ylab('Total TEs Per Tissue') ))
 
 dev.off()
 
-pdf("plots/04b-sc_tissue_upset_counts.pdf", height=4, width=7)
+pdf("plots/04c-sc_tissue_upset_cpm.pdf", height=4, width=7)
 # Upset for single cell
-upset(tissue_counts_sc, tissues, name='Shared and Unique TEs Per Tissue Type in Single Cell',
+upset(tissue_cpm_sc, tissues, name='Shared and Unique TEs Per Tissue Type in Single Cell',
       intersections = list( 
         c("Heart","Sk_muscle", "Skin", "E_Mucosa",
           "E_Muscularis", "Prostate", "Breast", "Lung"), 
@@ -285,7 +284,7 @@ total_merged_family_breakdown <-
   group_by(Identified_in) %>%
   summarize(total = sum(TE_count))
 
-pdf("plots/04b-te_families_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_bulk_sc_cpm.pdf", height=8, width=5)
 ggplot(merged_family_breakdown, aes(fill=reorder(family, -TE_count), y=Identified_in, x=TE_count)) + 
   geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
   scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
@@ -307,8 +306,8 @@ dev.off()
 
 ############################### TE DISTRIBUTION ################################
 
-pdf("plots/04b-violin_bulk_sc_counts.pdf", height=3, width=4)
-ggplot(long_counts, aes(type, value, fill=type)) +
+pdf("plots/04c-violin_bulk_sc_cpm.pdf", height=3, width=4)
+ggplot(long_cpm, aes(type, value, fill=type)) +
   geom_violin() +
   stat_summary(fun=mean, geom="point", shape=23, size=2) + 
   scale_y_continuous(trans = "log10") +
@@ -317,9 +316,9 @@ ggplot(long_counts, aes(type, value, fill=type)) +
   ylab("TE Expression") + 
   theme(legend.position = c("None"))
 dev.off()
-  
-pdf("plots/04b-violin_bulk_sc_tissue_counts.pdf", height=3, width=5)
-ggplot(long_counts, aes(tissue, value, fill=type)) +
+
+pdf("plots/04c-violin_bulk_sc_tissue_cpm.pdf", height=3, width=5)
+ggplot(long_cpm, aes(tissue, value, fill=type)) +
   geom_violin() +
   stat_summary(fun=mean, geom="point", shape=2, size=2) + 
   scale_y_continuous(trans = "log10") +
@@ -329,8 +328,8 @@ ggplot(long_counts, aes(tissue, value, fill=type)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 dev.off()
 
-pdf("plots/04b-violin_tissue_bulk_sc_counts.pdf", height=3, width=5)
-ggplot(long_counts, aes(type, value, fill=tissue)) +
+pdf("plots/04c-violin_tissue_bulk_sc_cpm.pdf", height=3, width=5)
+ggplot(long_cpm, aes(type, value, fill=tissue)) +
   geom_violin() +
   stat_summary(fun=mean, geom="point", shape=23, size=2) + 
   scale_y_continuous(trans = "log10") +
@@ -348,27 +347,27 @@ dev.off()
 # heart
 heart_venn <-
   ggvenn(list(`Bulk` = Heart_bulk, `Single Cell` = Heart_sc),
-       c("Bulk", "Single Cell"),
-       fill_color = c("#f8766d", "#00bfc4"),
-       set_name_size = 2, text_size = 2) + 
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
   ggtitle("Heart") + 
   theme(plot.title = element_text(hjust = 0.5, size = 10))
 
 # lung
 lung_venn <-
   ggvenn(list(`Bulk` = Lung_bulk, `Single Cell` = Lung_sc),
-       c("Bulk", "Single Cell"),
-       fill_color = c("#f8766d", "#00bfc4"),
-       set_name_size = 2, text_size = 2) + 
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
   ggtitle("Lung") + 
   theme(plot.title = element_text(hjust = 0.5, size = 10))
 
 # prostate 
 prostate_venn <- 
   ggvenn(list(`Bulk` = Prostate_bulk, `Single Cell` = Prostate_sc),
-       c("Bulk", "Single Cell"),
-       fill_color = c("#f8766d", "#00bfc4"),
-       set_name_size = 2, text_size = 2) + 
+         c("Bulk", "Single Cell"),
+         fill_color = c("#f8766d", "#00bfc4"),
+         set_name_size = 2, text_size = 2) + 
   ggtitle("Prostate") + 
   theme(plot.title = element_text(hjust = 0.5, size = 10))
 
@@ -417,7 +416,7 @@ Skin_venn <-
   ggtitle("Skin") + 
   theme(plot.title = element_text(hjust = 0.5, size = 10))
 
-pdf("plots/04b-tissue_venns_counts.pdf", height=4, width=7.6)
+pdf("plots/04c-tissue_venns_cpm.pdf", height=4, width=7.6)
 cowplot::plot_grid(heart_venn, lung_venn, prostate_venn, sk_muscle_venn,
                    E_muscularis_venn, E_mucosa_venn, Breast_venn, Skin_venn,
                    ncol=4)
@@ -489,38 +488,38 @@ shared_unique_tissues <-
       ggtitle(tissue_name) + 
       theme(plot.title = element_text(hjust = 0.5)) +
       theme(legend.title=element_blank())
+    
+  }
 
-}
-
-pdf("plots/04b-te_families_heart_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_heart_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(Heart_bulk, Heart_sc, "Heart")
 dev.off()
 
-pdf("plots/04b-te_families_lung_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_lung_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(Lung_bulk, Lung_sc, "Lung")
 dev.off()
 
-pdf("plots/04b-te_families_e_muscularis_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_e_muscularis_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(E_Muscularis_bulk, E_Muscularis_sc, "E. muscolaris")
 dev.off()
 
-pdf("plots/04b-te_families_e_mucosa_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_e_mucosa_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(E_Mucosa_bulk, E_Mucosa_sc, "E. mucosa")
 dev.off()
 
-pdf("plots/04b-te_families_prostate_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_prostate_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(Prostate_bulk, Prostate_sc, "Prostate")
 dev.off()
 
-pdf("plots/04b-te_families_breast_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_breast_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(Breast_bulk, Breast_sc, "Breast")
 dev.off()
 
-pdf("plots/04b-te_families_skin_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_skin_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(Skin_bulk, Skin_sc, "Skin")
 dev.off()
 
-pdf("plots/04b-te_families_sk_muscle_bulk_sc_counts.pdf", height=8, width=5)
+pdf("plots/04c-te_families_sk_muscle_bulk_sc_cpm.pdf", height=8, width=5)
 shared_unique_tissues(Sk_muscle_bulk, Sk_muscle_sc, "Sk muscle")
 dev.off()
 
@@ -531,10 +530,10 @@ shared_unique_tissues_df <-
     
     both <- as.data.frame(intersect(bulk_tissue, sc_tissue))
     colnames(both) <- c("TE")
-
+    
     bulk_only <- as.data.frame(setdiff(bulk_tissue, sc_tissue))
     colnames(bulk_only) <- c("TE")
-  
+    
     sc_only <- as.data.frame(setdiff(sc_tissue, bulk_tissue))
     colnames(sc_only) <- c("TE")
     
@@ -549,7 +548,7 @@ shared_unique_tissues_df(Prostate_bulk, Prostate_sc, "Prostate")
 
 
 save(Heart_bulk_only, Heart_sc_only, Heart_both,
-     file="r_outputs/04b-heart_unique_shared_te_counts.RData")
+     file="r_outputs/04c-heart_unique_shared_te_cpm.RData")
 
 save(Prostate_bulk_only, Prostate_sc_only, Prostate_both,
-     file="r_outputs/04b-prostate_unique_shared_te_counts.RData")
+     file="r_outputs/04c-prostate_unique_shared_te_cpm.RData")
