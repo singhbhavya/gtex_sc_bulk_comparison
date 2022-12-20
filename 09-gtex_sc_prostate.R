@@ -269,17 +269,18 @@ FeaturePlot(prostate.norm.merged, c("PLA2G2A", "CD24", "MSMB", "KLK3", "AZGP1",
 dev.off()
 
 # Cluster 6: Luminal Neuroendocrine epithelia
-pdf("plots/09-prostate_cluster6.pdf", height=15, width=15)
-FeaturePlot(prostate.norm.merged, c("FASN", "CPE", "SLC29A4", "ASRGL1", "PCSK1N", "SEC11C",
+pdf("plots/09-prostate_cluster6.pdf", height=15, width=19)
+FeaturePlot(prostate.norm.merged, c("FASN", "CPE", "CEBPD", "HP",
+                                    "SLC29A4", "ASRGL1", "PCSK1N", "SEC11C",
                                     "SERPINA3", "HML4-8q24.3", "HERVH-15q26.1c"), 
-            cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
 dev.off()
 
 # Cluster 3: Club epithelia + Hillock epithelia
 pdf("plots/09-prostate_cluster3.pdf", height=10, width=15)
 FeaturePlot(prostate.norm.merged, c("KRT13","KRT19","SCGB3A1", 
                                     "OLFM4", "PIGR", "SCUBE2"), 
-            cols=fpcols, ncol=2, raster=TRUE, pt.size = 2) 
+            cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
 dev.off()
 
 # Cluster 4: Basal epithelia
@@ -323,6 +324,9 @@ dev.off()
 pdf("plots/09-prostate_HML2-22q11.23.pdf", height=5, width=10)
 FeaturePlot(prostate.norm.merged, c("HML2-22q11.23", "ASRGL1"), 
             cols=fpcols, ncol=2, raster=TRUE, pt.size = 2) 
+
+FeaturePlot(prostate.norm.merged, c("HML2-11q12.3", "ASRGL1"), 
+            cols=fpcols, ncol=2, raster=TRUE, pt.size = 2) 
 dev.off()
 
 # Name clusters
@@ -344,6 +348,14 @@ DoHeatmap(prostate.norm.merged, features = top50$gene)
 dev.off()
 
 
+# Epithelial cell markers
+pdf("plots/09-prostate_epithelial_markers.pdf", height=15, width=18)
+FeaturePlot(prostate.norm.merged, c("MUC1", "KRT14", "CLDN1", "OCLN", "EPCAM", 
+                                    "KLK3", "KLK2", "KLK1", "CDH1", "TXNDC2", 
+                                    "MTRNR2L1"), 
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 3) 
+dev.off()
+
 ################################## ADD IDENTS ##################################
 
 prostate.norm.merged.gtex <- prostate.norm.merged
@@ -358,4 +370,56 @@ Idents(object = prostate.norm.merged.gtex) <-
 pdf("plots/09-prostate.norm.merged_umap_original_idents.pdf", height=5, width=8)
 DimPlot(prostate.norm.merged.gtex, reduction = "umap", 
         cols=Seurat::DiscretePalette(10, 'polychrome'))
+dev.off()
+
+############################### HERVS BULK ONLY ################################
+
+
+prostate.cpm.herv <- counts.cpm.herv[, c("GTEX-12BJ1-1226-SM-5LUAE", "GTEX-15CHR-1226-SM-79OON",
+                                    "GTEX-1HSMQ-1826-SM-A9SMJ", "GTEX-1I1GU-1126-SM-A96S9")]
+
+
+row.names(Prostate_bulk_only) <- Prostate_bulk_only$TE
+row.names(Prostate_both) <- Prostate_both$TE
+row.names(Prostate_sc_only) <- Prostate_sc_only$TE
+
+prostate.cpm.herv.bulk.only <-
+  as.data.frame(prostate.cpm.herv[rownames(prostate.cpm.herv) %in% 
+                                    row.names(Prostate_bulk_only), ])
+
+prostate.cpm.herv.both <-
+  as.data.frame(prostate.cpm.herv[rownames(prostate.cpm.herv) %in% 
+                                    row.names(Prostate_both), ])
+
+
+pdf("plots/09-prostate_bulk_only_herv_cpm.pdf", height=11, width=10)
+ggplot(melt(prostate.cpm.herv.bulk.only), 
+       aes(factor(variable), value)) + 
+  stat_boxplot(geom = "errorbar",
+               width = 0.15) + 
+  geom_boxplot() +
+  facet_wrap(~variable, scale="free") +
+  theme_pubclean() +
+  xlab("Prostate Bulk Sample") +
+  ylab("CPM of HERVs Unique to Bulk") +
+  scale_y_continuous(limits = c(0, 160), breaks = seq(0, 160, by = 5)) +
+  theme(axis.text = element_text(size=10), 
+        axis.title.x = element_text(size=10), 
+        axis.text.y = element_text(size=10))
+dev.off()
+
+pdf("plots/09-prostate_shared_herv_cpm.pdf", height=11, width=10)
+ggplot(melt(prostate.cpm.herv.both), 
+       aes(factor(variable), value)) + 
+  stat_boxplot(geom = "errorbar",
+               width = 0.15) + 
+  geom_boxplot() +
+  facet_wrap(~variable, scale="free") +
+  theme_pubclean() +
+  xlab("Prostate Bulk Sample") +
+  ylab("CPM of HERVs Shared in Bulk and Single Cell")  +
+  scale_y_continuous(limits = c(0, 160), breaks = seq(0, 160, by = 5)) +
+  theme(axis.text = element_text(size=10), 
+        axis.title.x = element_text(size=10), 
+        axis.text.y = element_text(size=10))
 dev.off()
