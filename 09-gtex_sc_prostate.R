@@ -25,6 +25,7 @@ load("r_outputs/03-gtex_seurat.norm.Rdata")
 load("r_outputs/04d-prostate_unique_shared_te_cpm_0.5.RData")
 load("r_outputs/01-counts.Rdata")
 load("r_outputs/02a-GTEx_8_snRNAseq_atlas.seurat.RData")
+load("r_outputs/03-scgtex_seurat_counts.Rdata")
 
 # Remove unwanted Seurat objects
 remove(GTEX_13N11_5002_SM_H5JDV.seurat.norm, GTEX_13N11_5030_SM_H5JDW.seurat.norm,
@@ -378,10 +379,13 @@ dev.off()
 prostate.cpm.herv <- counts.cpm.herv[, c("GTEX-12BJ1-1226-SM-5LUAE", "GTEX-15CHR-1226-SM-79OON",
                                     "GTEX-1HSMQ-1826-SM-A9SMJ", "GTEX-1I1GU-1126-SM-A96S9")]
 
+prostate.cpm.herv.sc <- pseudobulk.herv.cpm.raw[, c("GTEX_12BJ1_5007_SM_H8L6U", "GTEX_15CHR_5014_SM_H5JDU",
+                                              "GTEX_1HSMQ_5014_SM_GKSJI", "GTEX_1I1GU_5006_SM_G8XQC")]
 
 row.names(Prostate_bulk_only) <- Prostate_bulk_only$TE
 row.names(Prostate_both) <- Prostate_both$TE
 row.names(Prostate_sc_only) <- Prostate_sc_only$TE
+row.names(Prostate_sc_only)<- gsub("_", "-", row.names(Prostate_sc_only))
 
 prostate.cpm.herv.bulk.only <-
   as.data.frame(prostate.cpm.herv[rownames(prostate.cpm.herv) %in% 
@@ -390,6 +394,10 @@ prostate.cpm.herv.bulk.only <-
 prostate.cpm.herv.both <-
   as.data.frame(prostate.cpm.herv[rownames(prostate.cpm.herv) %in% 
                                     row.names(Prostate_both), ])
+
+prostate.cpm.herv.sc.only <-
+  as.data.frame(prostate.cpm.herv.sc[rownames(prostate.cpm.herv.sc) %in% 
+                                    row.names(Prostate_sc_only), ])
 
 
 pdf("plots/09-prostate_bulk_only_herv_cpm.pdf", height=11, width=10)
@@ -423,3 +431,27 @@ ggplot(melt(prostate.cpm.herv.both),
         axis.title.x = element_text(size=10), 
         axis.text.y = element_text(size=10))
 dev.off()
+
+pdf("plots/09-prostate_sc_only_herv_cpm.pdf", height=11, width=10)
+ggplot(melt(prostate.cpm.herv.sc.only), 
+       aes(factor(variable), value)) + 
+  stat_boxplot(geom = "errorbar",
+               width = 0.15) + 
+  geom_boxplot() +
+  facet_wrap(~variable, scale="free") +
+  theme_pubclean() +
+  xlab("Prostate Single Cell Sample") +
+  ylab("CPM of HERVs Unique to Single Cell") +
+  scale_y_continuous(limits = c(0, 160), breaks = seq(0, 160, by = 5)) +
+  theme(axis.text = element_text(size=10), 
+        axis.title.x = element_text(size=10), 
+        axis.text.y = element_text(size=10))
+dev.off()
+
+
+############################## SAVE R DATA FILES ###############################
+
+save(prostate.norm.merged, prostate.norm.merged.gtex, prostate.norm.merged.markers,
+     all_gtex_metadata, gtex_metadata, file = "r_outputs/09-prostate_merged.RData")
+
+
