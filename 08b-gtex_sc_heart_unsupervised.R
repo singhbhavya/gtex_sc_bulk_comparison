@@ -219,13 +219,47 @@ dev.off()
 
 fpcols <- c('#eeeeeeFF', viridis::viridis(6))
 
-# Clusters 0, 3, 4: Cardiomyocytes
-pdf("plots/08b-heart_cluster0.pdf", height=15, width=15)
-FeaturePlot(heart.norm.merged, c("TTN", "RYR2", "MLIP", "FGF12", "ANKRD1",
-                                 "L1FLI-10q25.1b", "MYH7B", "L1FLnI-1q43a", 
-                                 "PPM1K", "HERV3-8q11.23", ), 
+# Clusters 0, 2, 3, 4, 7, 9: Cardiomyocytes
+pdf("plots/08b-heart_cluster0_3_4.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("TTN",  "MYBPC3", "TNNT2", "RYR2", "PLN", "SLC8A1", 
+                                 "MYH7","MYL2", "L1FLI-10q25.1b", "L1FLnI-1q43a", 
+                                 "HERV3-8q11.23", "L1FLnI-5q12.3v"), 
             cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
 dev.off()
+
+# Clusters 1 & 6: Myofibroblast
+pdf("plots/08b-heart_cluster1.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("COL3A1", "COL1A2", "COL1A1", "CCDC80", "BGN",
+                                 "SERPINE2", "MGP", "POSTN", 
+                                 "L1FLnI-Xq21.1yc", "L1FLnI-13q31.1u", "L1FLnI-15q22.2e", 
+                                 "L1FLnI-17q24.2c"), 
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+# Cluster 2: Cytoplasmic cardiomyocytes?
+pdf("plots/08b-heart_cluster2.pdf", height=6, width=9)
+FeaturePlot(heart.norm.merged, c("MYH7", "CKM", "NDUFA4", "TNNC1","MYL3", "S100A1"), 
+            cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
+dev.off()
+
+# Cluster 3: LncRNA and TE-rich cardiomyocytes
+pdf("plots/08b-heart_cluster3.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("DONSON", "SORBS2", "TTN", "PLIN5", "SNHG14",
+                                 "XIST", "L1FLnI-5q33.2i", "L1FLnI-12p13.33d",
+                                 "L1FLI-3q13.13", "L1FLnI-14q12cb", "L1FLnI-4q12l",
+                                 "HERVL-3p21.31a"), 
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+# Cluster 5: Immune (DC/macrophage)
+
+# Cluster 8: vascular endothelial cells
+
+# Cluster 10: Pericyte / SMC
+
+# Cluster 11: Adipocyte
+
+# Cluster 12: lymphatic endothelial cells
 
 
 ################################## ADD IDENTS ##################################
@@ -244,7 +278,7 @@ DimPlot(heart.norm.merged.gtex, reduction = "umap",
         cols=Seurat::DiscretePalette(12, 'glasbey'))
 dev.off()
 
-##########################ME### ADD GRANULAR IDENTS ##############################
+############################# ADD GRANULAR IDENTS ##############################
 
 heart.norm.merged.azimuth <- heart.norm.merged
 heart.norm.merged.azimuth <- AddMetaData(object = heart.norm.merged.gtex, 
