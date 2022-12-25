@@ -220,30 +220,45 @@ dev.off()
 fpcols <- c('#eeeeeeFF', viridis::viridis(6))
 
 # Clusters 0, 2, 3, 4, 7, 9: Cardiomyocytes
-pdf("plots/08b-heart_cluster0_3_4.pdf", height=15, width=18)
+pdf("plots/08b-heart_cluster023479_cardiomyocytes.pdf", height=15, width=18)
 FeaturePlot(heart.norm.merged, c("TTN",  "MYBPC3", "TNNT2", "RYR2", "PLN", "SLC8A1", 
                                  "MYH7","MYL2", "L1FLI-10q25.1b", "L1FLnI-1q43a", 
                                  "HERV3-8q11.23", "L1FLnI-5q12.3v"), 
             cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
 dev.off()
 
+pdf("plots/08b-heart_cluster023479_cardiomyocytes_violin.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("TTN",  "MYBPC3", "TNNT2", "RYR2", "PLN", "SLC8A1", 
+                                        "MYH7","MYL2", "L1FLI-10q25.1b", "L1FLnI-1q43a", 
+                                        "HERV3-8q11.23", "L1FLnI-5q12.3v"))
+dev.off()
+
 # Clusters 1 & 6: Myofibroblast
-pdf("plots/08b-heart_cluster1.pdf", height=15, width=18)
-FeaturePlot(heart.norm.merged, c("COL3A1", "COL1A2", "COL1A1", "CCDC80", "BGN",
+pdf("plots/08b-heart_cluster16_fibroblast.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("DCN", "GSN", "PDGFRA", "TNC", "COL3A1", 
+                                 "COL1A2", "COL1A1", "CCDC80", "BGN",
                                  "SERPINE2", "MGP", "POSTN", 
                                  "L1FLnI-Xq21.1yc", "L1FLnI-13q31.1u", "L1FLnI-15q22.2e", 
                                  "L1FLnI-17q24.2c"), 
             cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
 dev.off()
 
+pdf("plots/08b-heart_cluster16_fibroblast_violin.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("DCN", "GSN", "PDGFRA", "TNC", "COL3A1", 
+                                        "COL1A2", "COL1A1", "CCDC80", "BGN",
+                                        "SERPINE2", "MGP", "POSTN", 
+                                        "L1FLnI-Xq21.1yc", "L1FLnI-13q31.1u", "L1FLnI-15q22.2e", 
+                                        "L1FLnI-17q24.2c"), ncol=4)
+dev.off()
+
 # Cluster 2: Cytoplasmic cardiomyocytes?
-pdf("plots/08b-heart_cluster2.pdf", height=6, width=9)
+pdf("plots/08b-heart_cluster2_cardiomyocyte.pdf", height=6, width=9)
 FeaturePlot(heart.norm.merged, c("MYH7", "CKM", "NDUFA4", "TNNC1","MYL3", "S100A1"), 
             cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
 dev.off()
 
 # Cluster 3: LncRNA and TE-rich cardiomyocytes
-pdf("plots/08b-heart_cluster3.pdf", height=15, width=18)
+pdf("plots/08b-heart_cluster3_cardiomyocyte.pdf", height=15, width=18)
 FeaturePlot(heart.norm.merged, c("DONSON", "SORBS2", "TTN", "PLIN5", "SNHG14",
                                  "XIST", "L1FLnI-5q33.2i", "L1FLnI-12p13.33d",
                                  "L1FLI-3q13.13", "L1FLnI-14q12cb", "L1FLnI-4q12l",
@@ -252,14 +267,70 @@ FeaturePlot(heart.norm.merged, c("DONSON", "SORBS2", "TTN", "PLIN5", "SNHG14",
 dev.off()
 
 # Cluster 5: Immune (DC/macrophage)
+pdf("plots/08b-heart_cluster5_dc_macrophage.pdf", height=9, width=18)
+FeaturePlot(heart.norm.merged, c("LYVE1", "CD163", "C1QA", "LYZ", "TYROBP", 
+                                 "L1FLnI-12p13.31c", "ERV316A3-2q22.2b", 
+                                 "HERVH-19p13.2d"), 
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-heart_cluster5_dc_macrophage_violin.pdf", height=9, width=18)
+VlnPlot(heart.norm.merged, features = c("LYVE1", "CD163", "C1QA", "LYZ", "TYROBP", 
+                                        "L1FLnI-12p13.31c", "ERV316A3-2q22.2b",
+                                        "HERVH-19p13.2d"), ncol=4)
+dev.off()
 
 # Cluster 8: vascular endothelial cells
+pdf("plots/08b-heart_cluster8_vascular_endothelial.pdf", height=9, width=15)
+FeaturePlot(heart.norm.merged, c("PECAM1", "CDH5", "VWF", "IFI27", "RAMP3",
+                                 "AQP1"), 
+            cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-heart_cluster8_vascular_endothelial_violin.pdf", height=9, width=15)
+VlnPlot(heart.norm.merged, features = c("PECAM1", "CDH5", "VWF", "IFI27", 
+                                        "RAMP3", "AQP1"), ncol=3)
+dev.off()
 
 # Cluster 10: Pericyte / SMC
+pdf("plots/08b-heart_cluster10_pericyte.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("ABCC9", "KCNJ8", "MYH11", "ACTA2", "NOTCH3",
+                                 "L1FLnI-3q25.31i", "HERVH-1p36.13", "LTR46-1p36.13",
+                                 "MER4-1p36.13"), 
+            cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-heart_cluster10_pericyte_violin.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("ABCC9", "KCNJ8", "MYH11", "ACTA2", "NOTCH3",
+                                        "L1FLnI-3q25.31i", "HERVH-1p36.13", "LTR46-1p36.13",
+                                        "MER4-1p36.13"), ncol=3)
+dev.off()
 
 # Cluster 11: Adipocyte
+pdf("plots/08b-heart_cluster11_adipocyte.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("PLIN1", "GPAM", "FASN","ADIPOQ", "THRSP", "MER4-22q12.3"), 
+            cols=fpcols, ncol=3, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-heart_cluster11_adipocytee_violin.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("PLIN1", "GPAM", "FASN","ADIPOQ", 
+                                        "THRSP", "MER4-22q12.3"), ncol=3)
+dev.off()
+
 
 # Cluster 12: lymphatic endothelial cells
+pdf("plots/08b-heart_cluster8_lymphatic_endothelial.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("PECAM1", "CDH5", "PROX1", "TBX1", "PDPN","MRC1",
+                                 "L1FLnI-7q21.11ba", "ERV316A3-8q23.1c", "ERV316A3-19q13.2",
+                                 "HML3-16p13.3"), 
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-heart_cluster8_lymphatic_endothelial_violin.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("PECAM1", "CDH5", "PROX1", "TBX1", "PDPN",
+                                        "MRC1","L1FLnI-7q21.11ba", "ERV316A3-8q23.1c", 
+                                        "ERV316A3-19q13.2","HML3-16p13.3"), ncol=4)
+dev.off()
 
 
 ################################## ADD IDENTS ##################################
@@ -302,4 +373,79 @@ pdf("plots/08b-heart.norm.merged_umap_original_idents_granular.pdf", height=5, w
 DimPlot(heart.norm.merged.gtex, reduction = "umap", pt.size = 0.3,
         cols=Seurat::DiscretePalette(20, 'glasbey'))
 dev.off()
+
+############################ TOP BULK HERVs in SC ##############################
+
+
+pdf("plots/08b-top_bulk_in_sc_feature_plots_gtex13n11.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("LTR46-Xq11.1", "ERVLE-15q25.3b", "HML6-19q13.43b", 
+                                 "MER4-3q29f", "HML4-16p13.3", "ERVLE-3p21.31f",
+                                 "HERVL-3p21.31a", "HML4-8q24.3", "ERVLB4-11p15.5c",
+                                 "HARLEQUIN-17q21.31"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-top_bulk_in_sc_violin_plots_gtex13911.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("LTR46-Xq11.1", "ERVLE-15q25.3b", "HML6-19q13.43b", 
+                           "MER4-3q29f", "HML4-16p13.3", "ERVLE-3p21.31f",
+                           "HERVL-3p21.31a", "HML4-8q24.3", "ERVLB4-11p15.5c",
+                           "HARLEQUIN-17q21.31", 
+                           cols=Seurat::DiscretePalette(13, 'glasbey')))
+dev.off()
+
+pdf("plots/08b-top_bulk_in_sc_feature_plots_gtex15RIE.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("ERVLE-15q25.3b", "PRIMA4-1p12b", "LTR46-Xq11.1", 
+                                 "HML6-19q13.43b", "MER4-3q29f", "HML4-16p13.3",
+                                 "ERVLB4-21q21.3e", "MER41-4p16.1b", "HML4-8q24.3",
+                                 "HARLEQUIN-17q21.31"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/08b-top_bulk_in_sc_violin_plots_gtex15RIE.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("ERVLE-15q25.3b", "PRIMA4-1p12b", "LTR46-Xq11.1", 
+                                        "HML6-19q13.43b", "MER4-3q29f", "HML4-16p13.3",
+                                        "ERVLB4-21q21.3e", "MER41-4p16.1b", "HML4-8q24.3",
+                                        "HARLEQUIN-17q21.31"))
+dev.off()
+
+pdf("plots/08b-top_bulk_in_sc_feature_plots_gtex1ICG6.pdf", height=15, width=18)
+FeaturePlot(heart.norm.merged, c("ERVLE-15q25.3b", "HML6-19q13.43b", "HERVL-3p21.31a", 
+                                 "ERVLB4-11p15.5c", "HML2-3q12.3", "HML3-1q32.1b",
+                                 "HML4-16p13.3", "LTR46-Xq11.1", "MER4-3q29f",
+                                 "HARLEQUIN-17q21.31"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+
+pdf("plots/08b-top_bulk_in_sc_violin_plots_gtex1ICG6.pdf", height=15, width=18)
+VlnPlot(heart.norm.merged, features = c("ERVLE-15q25.3b", "HML6-19q13.43b", "HERVL-3p21.31a", 
+                                        "ERVLB4-11p15.5c", "HML2-3q12.3", "HML3-1q32.1b",
+                                        "HML4-16p13.3", "LTR46-Xq11.1", "MER4-3q29f",
+                                        "HARLEQUIN-17q21.31"))
+
+dev.off()
+
+
+
+################################ NAME CLUSTERS #################################
+
+# Name clusters
+new.cluster.ids <- c("Cardiomyocyte I", "Myofibroblast I", "Cardiomyocyte II (Cytoplasmic)", 
+                     "Cardiomyocyte III (TE-rich)", "Cardiomyocyte IV", 
+                     "Immune (DC/Macrophage)", "Fibroblast I", "Cardiomyocyte V (Cytoplasmic)",
+                     "Endothelial Cell (Vascular)", "Cardiomyocyte I", "Pericyte/SMC",
+                     "Adipocyte", "Endothelial Cell (Lymphatic)")
+names(new.cluster.ids) <- levels(heart.norm.merged)
+heart.norm.merged <- RenameIdents(heart.norm.merged, new.cluster.ids)
+
+# Re-run UMAP and dim plot with new cluster numbers
+pdf("plots/08b-heart.norm.merged_umap_labelled.pdf", height=5, width=8)
+DimPlot(heart.norm.merged, reduction = "umap", 
+        cols=Seurat::DiscretePalette(13, 'glasbey')[1:13], pt.size = 0.3)
+dev.off()
+
+pdf("plots/08b-heart.norm.merged_umap_labelled.pdf", height=20, width=22)
+DoHeatmap(heart.norm.merged, features = top50$gene) 
+dev.off()
+
 
