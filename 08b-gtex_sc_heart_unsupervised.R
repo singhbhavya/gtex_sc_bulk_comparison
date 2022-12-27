@@ -444,7 +444,7 @@ DimPlot(heart.norm.merged, reduction = "umap",
         cols=Seurat::DiscretePalette(13, 'glasbey')[1:13], pt.size = 0.3)
 dev.off()
 
-pdf("plots/08b-heart.norm.merged_umap_labelled.pdf", height=20, width=22)
+pdf("plots/08b-heart.norm.merged_heatmap_labelled.pdf", height=20, width=22)
 DoHeatmap(heart.norm.merged, features = top50$gene) 
 dev.off()
 
