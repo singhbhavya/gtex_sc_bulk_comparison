@@ -441,17 +441,82 @@ ggplot(melt(prostate.cpm.herv.sc.only),
   facet_wrap(~variable, scale="free") +
   theme_pubclean() +
   xlab("Prostate Single Cell Sample") +
-  ylab("CPM of HERVs Unique to Single Cell") +
+  ylab("CPM of HERVs Unique to Single Cell") +fpcols
   scale_y_continuous(limits = c(0, 160), breaks = seq(0, 160, by = 5)) +
   theme(axis.text = element_text(size=10), 
         axis.title.x = element_text(size=10), 
         axis.text.y = element_text(size=10))
 dev.off()
 
+############################ TOP BULK HERVs in SC ##############################
+
+
+pdf("plots/09-top_bulk_in_sc_feature_plots_GTEX−12BJ1.pdf", height=15, width=18)
+FeaturePlot(prostate.norm.merged, c("LTR46-Xq11.1", "HML6-19q13.43b", "HML4-16p13.3", 
+                                 "HERVL-22q13.31", "HERVK11-15q15.1", "MER4-22q12.3",
+                                 "ERVLB4-2q13c", "MER4-3q29f", "ERV316A3-6q24.1a",
+                                 "HML5-12q23.1"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+
+dev.off()
+
+pdf("plots/09-top_bulk_in_sc_violin_plots_GTEX−12BJ1.pdf", height=15, width=18)
+VlnPlot(prostate.norm.merged, features = c("LTR46-Xq11.1", "HML6-19q13.43b", "HML4-16p13.3", 
+                                            "HERVL-22q13.31", "HERVK11-15q15.1", "MER4-22q12.3",
+                                            "ERVLB4-2q13c", "MER4-3q29f", "ERV316A3-6q24.1a",
+                                            "HML5-12q23.1"))
+dev.off()
+
+pdf("plots/09-top_bulk_in_sc_feature_plots_GTEX−15CHR.pdf", height=15, width=18)
+FeaturePlot(prostate.norm.merged, c("LTR46-Xq11.1", "HML6-19q13.43b", "HML2-22q11.23", 
+                                    "HERVL-22q13.31", "MER4-3q29f", "HARLEQUIN-17q21.31",
+                                    "HERVK11-15q15.1", "HML4-8q24.3", "HML2-17p13.1",
+                                    "ERV316A3-6q24.1a"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/09-top_bulk_in_sc_violin_plots_GTEX−15CHR.pdf", height=15, width=18)
+VlnPlot(prostate.norm.merged, features = c("LTR46-Xq11.1", "HML6-19q13.43b", "HML2-22q11.23", 
+                                           "HERVL-22q13.31", "MER4-3q29f", "HARLEQUIN-17q21.31",
+                                           "HERVK11-15q15.1", "HML4-8q24.3", "HML2-17p13.1",
+                                           "ERV316A3-6q24.1a"))
+dev.off()
+
+
+pdf("plots/09-top_bulk_in_sc_feature_plots_GTEX−1HSMQ.pdf", height=15, width=18)
+FeaturePlot(prostate.norm.merged, c("MER4-3q29f", "HERVL-22q13.31", "HML6-19q13.43b", 
+                                    "HERVK11-15q15.1", "LTR46-Xq11.1", "ERVLE-15q25.3b",
+                                    "HARLEQUIN-17q21.31", "HML4-16p13.3", "HML2-3q12.3",
+                                    "HML4-8q24.3"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+pdf("plots/09-top_bulk_in_sc_violin_plots_GTEX−1HSMQ.pdf", height=15, width=18)
+VlnPlot(prostate.norm.merged, features = c("MER4-3q29f", "HERVL-22q13.31", "HML6-19q13.43b", 
+                                           "HERVK11-15q15.1", "LTR46-Xq11.1", "ERVLE-15q25.3b",
+                                           "HARLEQUIN-17q21.31", "HML4-16p13.3", "HML2-3q12.3",
+                                           "HML4-8q24.3"))
+dev.off()
+
+pdf("plots/09-top_bulk_in_sc_feature_plots_GTEX−1I1GU.pdf", height=15, width=18)
+FeaturePlot(prostate.norm.merged, c("HERVE-12q13.13", "HERVH-Xq25b", "HML6-19q13.43b", 
+                                    "LTR46-Xq11.1", "HERVE-20p11.21b", "HERVE-17q11.2",
+                                    "HML2-17p13.1", "HERVS71-19p12a", "ERV316A3-6q24.1a",
+                                    "HML4-16p13.3"),
+            cols=fpcols, ncol=4, raster=TRUE, pt.size = 2) 
+dev.off()
+
+
+pdf("plots/09-top_bulk_in_sc_violin_plots_GTEX−1I1GU.pdf", height=15, width=18)
+VlnPlot(prostate.norm.merged, features = c("HERVE-12q13.13", "HERVH-Xq25b", "HML6-19q13.43b", 
+                                           "LTR46-Xq11.1", "HERVE-20p11.21b", "HERVE-17q11.2",
+                                           "HML2-17p13.1", "HERVS71-19p12a", "ERV316A3-6q24.1a",
+                                           "HML4-16p13.3"))
+dev.off()
 
 ############################## SAVE R DATA FILES ###############################
 
 save(prostate.norm.merged, prostate.norm.merged.gtex, prostate.norm.merged.markers,
      all_gtex_metadata, gtex_metadata, file = "r_outputs/09-prostate_merged.RData")
 
-
+load("r_outputs/09-prostate_merged.RData")
