@@ -479,6 +479,10 @@ shared_unique_tissues <-
       group_by(Identified_in) %>%
       summarize(total = sum(TE_count))
     
+    assign(paste0("merged_family_breakdown_", tissue_name), merged_family_breakdown, 
+           envir = .GlobalEnv)
+    
+    
     ggplot(merged_family_breakdown, aes(fill=reorder(family, -TE_count), y=Identified_in, x=TE_count)) + 
       geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
       scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
@@ -533,3 +537,47 @@ pdf("plots/04e-herv_families_sk_muscle_bulk_sc_cpm_0.5.pdf", height=8, width=5)
 shared_unique_tissues(Sk_muscle_bulk, Sk_muscle_sc, "Sk muscle")
 dev.off()
 
+##################### ALL TISSUE-LEVEL SHARED AND UNIQUE TEs ###################
+
+all_tissues_merged_family <- bind_rows(merged_family_breakdown_Breast,
+                                       `merged_family_breakdown_E. mucosa`, 
+                                       `merged_family_breakdown_E. muscolaris`,
+                                       merged_family_breakdown_Heart,
+                                       merged_family_breakdown_Lung,
+                                       merged_family_breakdown_Prostate,
+                                       `merged_family_breakdown_Sk muscle`,
+                                       merged_family_breakdown_Skin,
+                                       .id = 'Tissue')
+
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "1"] <- "Breast"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "2"] <- "E. Mucosa"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "3"] <- "E. muscolaris"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "4"] <- "Heart"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "5"] <- "Lung"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "6"] <- "Prostate"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "7"] <- "Sk muscle"
+all_tissues_merged_family$Tissue[all_tissues_merged_family$Tissue == "8"] <- "Skin"
+
+pdf("plots/04e-herv_families_all_bulk_sc_cpm_0.5.pdf", height=16, width=10)
+ggplot(all_tissues_merged_family, aes(fill=reorder(family, -TE_count), 
+                                      y=Identified_in, 
+                                      x=TE_count)) + 
+  geom_bar(position="stack", stat="identity", colour="black", size=0.3) + 
+  scale_fill_manual(values = c(pal_futurama("planetexpress")(12), 
+                               pal_npg("nrc", alpha = 0.7)(10),
+                               pal_jco("default", alpha=0.7)(10),
+                               pal_nejm("default", alpha=0.7)(8),
+                               pal_tron("legacy", alpha=0.7)(7),
+                               pal_lancet("lanonc", alpha=0.7)(9),
+                               pal_startrek("uniform", alpha=0.7)(7))) + 
+  coord_flip() +
+  theme_pubclean() + 
+  guides(fill=guide_legend(title="HERV Family")) +
+  ylab("HERVs identified") +
+  xlab("Proportion of HERVs") + 
+  theme(legend.position = c("right")) + 
+  guides(fill = guide_legend(ncol = 2)) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.title=element_blank())  +
+  facet_wrap(~ Tissue, ncol = 4)
+dev.off()
