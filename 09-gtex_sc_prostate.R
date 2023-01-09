@@ -217,6 +217,11 @@ cluster2.markers <- FindMarkers(prostate.norm.merged,
                                 ident.1 = 2, min.pct = 0.25)
 head(cluster2.markers, n = 5)
 
+# Finding differentially expressed features (cluster biomarkers)
+cluster6.markers <- FindMarkers(prostate.norm.merged, 
+                                ident.1 = "Luminal Neuroendocrine epithelia", 
+                                min.pct = 0.25)
+
 # find markers for every cluster compared to all remaining cells, report only the positive
 # ones
 prostate.norm.merged.markers <- 
@@ -333,7 +338,7 @@ dev.off()
 # Name clusters
 new.cluster.ids <- c("Luminal epithelia", "HERV-rich luminal epithelia", "LINE-rich luminal epithelia", 
                      "Club/Hillock/basal epithelia", "Basal epithelia", 
-                     "Myocyte (smooth muscle)", "Luminal Neuroendocrine epithelia", "Endothelia",
+                     "Myocyte (smooth muscle)", "Luminal epithelia sub-type unknown", "Endothelia",
                      "Fibroblast", "Immune (DC/Macrophage)")
 names(new.cluster.ids) <- levels(prostate.norm.merged)
 prostate.norm.merged <- RenameIdents(prostate.norm.merged, new.cluster.ids)
@@ -513,6 +518,9 @@ VlnPlot(prostate.norm.merged, features = c("HERVE-12q13.13", "HERVH-Xq25b", "HML
                                            "HML2-17p13.1", "HERVS71-19p12a", "ERV316A3-6q24.1a",
                                            "HML4-16p13.3"))
 dev.off()
+
+FeaturePlot(prostate.norm.merged, c("TUBA3D", "HP", "ZDHHC8P1", "SLC29A4", "GAL", "CD177",
+                                    "GAS1", "SCNN1B", "MT1M", "SLC7A2", "PDK4"))
 
 ############################## SAVE R DATA FILES ###############################
 
