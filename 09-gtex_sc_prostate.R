@@ -375,7 +375,8 @@ Idents(object = prostate.norm.merged.gtex) <-
 
 pdf("plots/09-prostate.norm.merged_umap_original_idents.pdf", height=5, width=8)
 DimPlot(prostate.norm.merged.gtex, reduction = "umap", 
-        cols=Seurat::DiscretePalette(10, 'polychrome'))
+        cols=c("#66013d", "#B00068", "#FE00FA", "#f288f0", "#855284", "#5A5156",
+               "#1CFFCE", "#90AD1C", "#3283FE", "#0c8999"))
 dev.off()
 
 ############################### HERVS BULK ONLY ################################
